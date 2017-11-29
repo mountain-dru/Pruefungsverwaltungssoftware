@@ -1,0 +1,80 @@
+
+
+#pr_table .table-column {
+    -fx-alignment: CENTER;
+}
+
+/*
+.button{
+    -fx-background-color: #F99532;
+    -fx-border-radius: 0 0 0 0; 
+    -fx-background-radius: 0 0 0 0;
+    -fx-text-fill: black; 
+    -fx-cursor: hand; 
+}
+
+.choice-box {
+    -fx-background-color: #F99532;
+    -fx-text-fill: white; 
+    -fx-mark-color: black; 
+}
+
+
+
+.choice-box .menu-item:focused {
+    -fx-background-color: #F99532;
+    -fx-cursor: hand; 
+}
+.table-view .column-header-background .label{
+    -fx-background-color: transparent;
+    -fx-text-fill: black;
+    -fx-cursor: hand; 
+}
+
+
+.table-view .column-header {
+    -fx-background-color: transparent;
+}
+
+.table-row-cell:selected {
+    -fx-background-color: #F99532;
+}
+.table-row-cell:selected .text {
+    -fx-fill: black ;
+}
+
+
+
+table-view > .virtual-flow > .scroll-bar:vertical{
+    -fx-background-color:transparent;
+}
+
+
+.list-cell:filled:selected:focused {
+    -fx-background-color: #F99532;
+    -fx-cursor: hand; 
+}
+
+*/
+.list-cell {
+    -fx-cursor: hand; 
+}
+
+.button:hover {
+    -fx-cursor: hand; 
+}
+
+.table-row-cell:hover{
+    -fx-cursor: hand; 
+}
+
+.tree-cell:hover{
+    -fx-cursor: hand; 
+}
+.choice-box:hover {
+    -fx-cursor: hand; 
+}
+
+.date-picker-popup {
+    -fx-cursor: hand; 
+}

@@ -1,0 +1,101 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.Button?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.control.TableColumn?>
+<?import javafx.scene.control.TableView?>
+<?import javafx.scene.layout.AnchorPane?>
+<?import javafx.scene.layout.BorderPane?>
+<?import javafx.scene.layout.ColumnConstraints?>
+<?import javafx.scene.layout.GridPane?>
+<?import javafx.scene.layout.RowConstraints?>
+<?import javafx.scene.text.Font?>
+
+<BorderPane maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="400.0" prefWidth="848.0" xmlns="http://javafx.com/javafx/8.0.102" xmlns:fx="http://javafx.com/fxml/1" fx:controller="at.htlstp.projekt.p04.fxml_controller.PSMenuController">
+   <center>
+      <TableView fx:id="tbl_pruefungen" prefHeight="268.0" prefWidth="851.0" BorderPane.alignment="CENTER">
+        <columns>
+          <TableColumn fx:id="tcol_name" prefWidth="204.0" text="Name" />
+            <TableColumn fx:id="tcol_date" prefWidth="172.0" text="Datum" />
+            <TableColumn fx:id="tcol_beginn" prefWidth="111.0" text="Beginn-Ende" />
+          <TableColumn fx:id="tcol_klasse" prefWidth="99.0" text="Klasse" />
+            <TableColumn fx:id="tcol_gegenstand" prefWidth="111.0" text="Gegenstand" />
+            <TableColumn fx:id="tcol_status" prefWidth="144.0" text="Status" />
+        </columns>
+      </TableView>
+   </center>
+   <top>
+      <AnchorPane prefHeight="52.0" prefWidth="761.0" BorderPane.alignment="CENTER">
+         <children>
+            <Label fx:id="lbl_Pruefer" layoutX="29.0" layoutY="19.0" text="Prüfer:" AnchorPane.topAnchor="10.0">
+               <font>
+                  <Font size="20.0" />
+               </font>
+            </Label>
+         </children>
+      </AnchorPane>
+   </top>
+   <bottom>
+      <GridPane BorderPane.alignment="CENTER">
+        <columnConstraints>
+            <ColumnConstraints halignment="CENTER" hgrow="SOMETIMES" minWidth="10.0" prefWidth="150.0" />
+          <ColumnConstraints halignment="CENTER" hgrow="SOMETIMES" maxWidth="230.0" minWidth="10.0" prefWidth="150.0" />
+          <ColumnConstraints halignment="CENTER" hgrow="SOMETIMES" maxWidth="230.0" minWidth="10.0" prefWidth="150.0" />
+            <ColumnConstraints halignment="CENTER" hgrow="SOMETIMES" minWidth="10.0" prefWidth="150.0" />
+        </columnConstraints>
+        <rowConstraints>
+          <RowConstraints minHeight="10.0" prefHeight="30.0" valignment="CENTER" vgrow="SOMETIMES" />
+          <RowConstraints minHeight="10.0" prefHeight="30.0" valignment="CENTER" vgrow="SOMETIMES" />
+        </rowConstraints>
+         <children>
+            <Button fx:id="btn_NeuePruefung" mnemonicParsing="false" onAction="#onActionNeuePruefung" prefHeight="23.0" prefWidth="180.0" text="Neue Prüfung" GridPane.halignment="CENTER" GridPane.valignment="CENTER">
+               <font>
+                  <Font size="10.0" />
+               </font></Button>
+            <Button fx:id="btn_SchuelerZuweisen" mnemonicParsing="false" onAction="#onActionSchuelerZuweisung" prefHeight="23.0" prefWidth="180.0" text="Schüler zuweisen" GridPane.columnIndex="2" GridPane.halignment="CENTER" GridPane.valignment="CENTER">
+               <font>
+                  <Font size="10.0" />
+               </font>
+               <GridPane.margin>
+                  <Insets />
+               </GridPane.margin></Button>
+            <Button fx:id="btn_VerzKopieren" mnemonicParsing="false" onAction="#onActionVerzeichnisseKopieren" prefHeight="23.0" prefWidth="180.0" text="Verzeichnisse kopieren" GridPane.columnIndex="1" GridPane.halignment="CENTER" GridPane.rowIndex="1" GridPane.valignment="CENTER">
+               <font>
+                  <Font size="10.0" />
+               </font></Button>
+            <Button fx:id="btn_PruefungStarten" mnemonicParsing="false" onAction="#onActionPruefungStarten" prefHeight="23.0" prefWidth="180.0" text="Prüfung starten" GridPane.halignment="CENTER" GridPane.rowIndex="1" GridPane.valignment="CENTER">
+               <font>
+                  <Font size="10.0" />
+               </font></Button>
+            <Button fx:id="btn_AngabenInternet" mnemonicParsing="false" onAction="#onActionAngabenInternet" prefHeight="23.0" prefWidth="180.0" text="Angaben und Internetoptionen" GridPane.columnIndex="3" GridPane.halignment="CENTER" GridPane.valignment="CENTER">
+               <font>
+                  <Font size="10.0" />
+               </font>
+               <GridPane.margin>
+                  <Insets />
+               </GridPane.margin></Button>
+            <Button fx:id="btn_PruefungBeenden" mnemonicParsing="false" onAction="#onActionPruefungBeenden" prefHeight="23.0" prefWidth="180.0" text="Prüfung beenden " GridPane.columnIndex="2" GridPane.halignment="CENTER" GridPane.rowIndex="1" GridPane.valignment="CENTER">
+               <font>
+                  <Font size="10.0" />
+               </font></Button>
+            <Button fx:id="btn_PruefungLoeschen" mnemonicParsing="false" onAction="#onActionPruefungLoeschen" prefHeight="23.0" prefWidth="180.0" text="Prüfung löschen" GridPane.columnIndex="3" GridPane.halignment="CENTER" GridPane.rowIndex="1" GridPane.valignment="CENTER">
+               <font>
+                  <Font size="10.0" />
+               </font>
+            </Button>
+            <Button fx:id="btn_PruefungBearbeiten" mnemonicParsing="false" onAction="#onActionPruefungBearbeiten" prefHeight="23.0" prefWidth="180.0" text="Pürfung bearbeiten" GridPane.columnIndex="1" GridPane.halignment="CENTER" GridPane.valignment="CENTER">
+               <font>
+                  <Font size="10.0" />
+               </font>
+            </Button>
+         </children>
+         <opaqueInsets>
+            <Insets />
+         </opaqueInsets>
+         <padding>
+            <Insets bottom="10.0" left="10.0" right="10.0" top="10.0" />
+         </padding>
+      </GridPane>
+   </bottom>
+</BorderPane>
