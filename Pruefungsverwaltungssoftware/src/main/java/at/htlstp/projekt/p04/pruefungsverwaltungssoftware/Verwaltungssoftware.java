@@ -8,8 +8,10 @@ import at.htlstp.projekt.p04.graphic_tools.Utilities;
 import at.htlstp.projekt.p04.ldap.LDAPAuthentification;
 import at.htlstp.projekt.p04.login.Login;
 import at.htlstp.projekt.p04.model.Lehrer;
+import at.htlstp.projekt.p04.model.PraPruefung;
 import java.io.IOException;
 import java.nio.file.Files;
+import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.DayOfWeek;
 import java.time.Duration;
@@ -39,6 +41,8 @@ public class Verwaltungssoftware extends Application {
             STYLE_URL = ps_configs.getProperty("STYLE_PATH");
             LOGO_URL = ps_configs.getProperty("LOGO_PATH");
             OPERATING_SYSTEM = System.getProperty("os.name");
+            PRUEFER_PATH = Paths.get(ps_configs.getProperty("PRUEFER_PATH"));
+            SCHUELER_PATH = Paths.get(ps_configs.getProperty("SCHUELER_PATH"));
         } catch (IOException ex) {
             Utilities.showMessageForExceptions(ex, schooltoolsLogo(), true);
         }
@@ -48,7 +52,9 @@ public class Verwaltungssoftware extends Application {
     public static double INFORMATION_MESSAGE_WIDTH;
     private static String STYLE_URL;
     private static String LOGO_URL;
-    static String OPERATING_SYSTEM;
+    public static String OPERATING_SYSTEM;
+    public static Path SCHUELER_PATH;
+    public static Path PRUEFER_PATH;
 
     public static void installSchooltoolsStyleSheet(Scene rootScene) {
         Verwaltungssoftware vsObject = new Verwaltungssoftware();
@@ -74,7 +80,9 @@ public class Verwaltungssoftware extends Application {
                 //Datenbank hochladen 
                 Class.forName("at.htlstp.projekt.p04.db.HibernateJPAUtil");
                 Lehrer lr = DAO.getDaoInstance().getLehrerByKurzbezeichnung(kurzBezLehrer);
-                EntityManager em = HibernateJPAUtil.getEntityManagerFactory().createEntityManager();
+                EntityManager em = HibernateJPAUtil.getEntityManagerFactory().createEntityManager(); 
+                System.out.println(em.createQuery("select le from Lehrer le where le.lehrerKb = :le").setParameter("le", "lul").getResultList());
+               
 
                 CustomStage<PSMenuController> customstage
                         = new CustomStage<>(stage,
@@ -144,7 +152,13 @@ public class Verwaltungssoftware extends Application {
             }
         };
         dpick.setDayCellFactory(dayCellFactory);
-
+        
+    }
+    public static Path getDirectoryFromPruefung(PraPruefung pruefung){
+        Path p = Paths.get(Verwaltungssoftware.PRUEFER_PATH.toString() + "/"
+                        + pruefung.getLehrer().getLehrerKb().toUpperCase() + "_Pruefungen/"
+                        + pruefung.getName() + "_" + pruefung.getKlasse()); 
+        return p; 
     }
 
     /**

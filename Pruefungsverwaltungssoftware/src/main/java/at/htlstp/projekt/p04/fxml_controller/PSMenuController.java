@@ -113,6 +113,10 @@ public class PSMenuController implements Initializable {
     @Override
     public void initialize(URL url, ResourceBundle rb) {
         if (lehrer != null) {
+//           List<Schueler> schs = DAO.getDaoInstance().getSchuelerByKlasse(new Klasse("5AHIF"));
+//           for(Schueler sch: schs){
+//               System.out.println("5AHIF;" + sch.getSsdKatnr() + ";" + sch.getSsdZuname() + ";" + sch.getSsdVorname());
+//           }
 
             //Alle Klassen und Schüler im Vorhinein laden
             DAO.getDaoInstance().getKlassenByLehrer(lehrer).forEach((kl) -> {

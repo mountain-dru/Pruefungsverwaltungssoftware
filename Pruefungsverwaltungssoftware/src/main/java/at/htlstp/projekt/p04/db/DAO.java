@@ -210,12 +210,15 @@ public class DAO implements IDAO, AutoCloseable {
     }
 
     @Override
-    public Lehrer getLehrerByKurzbezeichnung(String kurzBez) {
-        EntityManager em = HibernateJPAUtil.getEntityManagerFactory().createEntityManager();
+    public Lehrer getLehrerByKurzbezeichnung(String kurzBezeichung) {
+        EntityManager entityManager = HibernateJPAUtil.getEntityManagerFactory().createEntityManager();
         try {
-            return em.find(Lehrer.class, kurzBez);
+            TypedQuery<Lehrer> lehrerQuery = entityManager.createQuery("select le from Lehrer le where le.lehrerKb = :lehrerKurzbezeichnung", Lehrer.class); 
+            lehrerQuery.setParameter("lehrerKurzbezeichnung", kurzBezeichung); 
+            Lehrer ergebnis = lehrerQuery.getSingleResult(); 
+            return ergebnis; 
         } finally {
-            em.close();
+            entityManager.close();
         }
     }
 

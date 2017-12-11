@@ -11,7 +11,11 @@ import at.htlstp.projekt.p04.model.Gegenstand;
 import at.htlstp.projekt.p04.model.Klasse;
 import at.htlstp.projekt.p04.model.PraPruefung;
 import at.htlstp.projekt.p04.pruefungsverwaltungssoftware.Verwaltungssoftware;
+import java.io.IOException;
 import java.net.URL;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.time.DayOfWeek;
 import java.time.LocalDate;
 import java.time.ZoneId;
@@ -39,7 +43,7 @@ import javafx.stage.WindowEvent;
  * @author Dru
  */
 public class PSPruefungController implements Initializable {
-    
+
     @FXML
     private Label lbl_pr_lehrername;
     @FXML
@@ -50,20 +54,20 @@ public class PSPruefungController implements Initializable {
     private ChoiceBox<Verwaltungssoftware.Unterrichtseinheit> chbox_pr_ue;
     @FXML
     private DatePicker dpicker_pr_date;
-    
+
     @FXML
     private TextField fld_pr_name;
     private PSMenuController menuController;
     @FXML
     private Button btn_speichern;
-    
+
     private PraPruefung pruefung;
-    
+
     private final Tooltip tip_name
             = new Tooltip("Eine Prüfung benötigt einen Namen!");
     private final Tooltip tip_date = new Tooltip("Das Prüfungsdatum darf nicht in der Vergangenheit\n"
             + " liegen, leer oder an einem Samstag/Sonntag sein!");
-    
+
     public void setMenuController(PSMenuController menuController) {
         this.menuController = menuController;
     }
@@ -79,15 +83,15 @@ public class PSPruefungController implements Initializable {
             lbl_pr_lehrername.setText(menuController.getLehrer().getLehrerVorname() + " " + menuController.getLehrer().getLehrerZuname());
             chbox_pr_klasse.setItems(FXCollections.observableArrayList(menuController.getSchuelerInKlassenByLehrer().keySet()));
             chbox_pr_ue.setItems(FXCollections.observableArrayList(Verwaltungssoftware.Unterrichtseinheit.values()));
-            
+
             chbox_pr_klasse.valueProperty().addListener((l, oldV, newV) -> {
                 chbox_pr_gegenstand.setItems(FXCollections.observableArrayList(instace.getGegenstaendeInKlasseByLehrer(menuController.getLehrer(), newV)));
                 chbox_pr_gegenstand.getSelectionModel().selectFirst();
             });
-            
+
             Stage myStage = (Stage) lbl_pr_lehrername.getScene().getWindow();
             myStage.setOnCloseRequest(e -> onActionClose(e));
-            
+
             fld_pr_name.textProperty().addListener((e, oldV, newV) -> {
                 if (newV == null || newV.isEmpty()) {
                     Tooltip.install(fld_pr_name, tip_name);
@@ -98,7 +102,7 @@ public class PSPruefungController implements Initializable {
                     fld_pr_name.setStyle(null);
                 }
             });
-            
+
             dpicker_pr_date.valueProperty().addListener((e, oldV, newV) -> {
                 if (!isDateValid(newV)) {
                     Tooltip.install(dpicker_pr_date, tip_date);
@@ -108,15 +112,15 @@ public class PSPruefungController implements Initializable {
                     Tooltip.uninstall(dpicker_pr_date, tip_date);
                     dpicker_pr_date.setStyle(null);
                 }
-                
+
             });
 
             //Styles hinzufügen 
             Verwaltungssoftware.installSchooltoolsStyleSheet(dpicker_pr_date.getScene());
         }
-        
+
     }
-    
+
     public void initializeNewPruefung() {
         chbox_pr_gegenstand.getSelectionModel().selectFirst();
         chbox_pr_klasse.getSelectionModel().selectFirst();
@@ -126,7 +130,7 @@ public class PSPruefungController implements Initializable {
         fld_pr_name.requestFocus();
         pruefung = null;
     }
-    
+
     public void initializePruefung(PraPruefung pr) {
         chbox_pr_gegenstand.getSelectionModel().select(pr.getGegenstand());
         chbox_pr_klasse.getSelectionModel().select(pr.getKlasse());
@@ -136,7 +140,7 @@ public class PSPruefungController implements Initializable {
         fld_pr_name.requestFocus();
         pruefung = pr;
     }
-    
+
     @FXML
     private void onActionSpeichern(ActionEvent event) {
         if (!testInput()) {
@@ -149,14 +153,24 @@ public class PSPruefungController implements Initializable {
                     false);
             return;
         }
-        
+
         Date fromLocal = Date.from(dpicker_pr_date.getValue().atStartOfDay(ZoneId.systemDefault()).toInstant());
         if (pruefung == null) {
             pruefung = getPraPruefungFromScene();
             DAO.getDaoInstance().persistPraktischePruefung(pruefung);
             menuController.getTbl_pruefungen().getItems().add(pruefung);
-            
+            try {
+                //Neue Ordner anlegen 
+                Path pathPruefung = Verwaltungssoftware.getDirectoryFromPruefung(pruefung);
+                Files.createDirectory(pathPruefung);
+                Files.createDirectory(pathPruefung.resolve(Paths.get("Angaben")));
+                Files.createDirectory(pathPruefung.resolve(Paths.get("Abgaben")));
+                Files.createDirectory(pathPruefung.resolve(Paths.get("Skripts")));
+            } catch (IOException ex) {
+                Utilities.showMessageForExceptions(ex, Verwaltungssoftware.schooltoolsLogo(), true);
+            }
         } else {
+            //Prüfung existiert bereits
             pruefung.setName(fld_pr_name.getText());
             pruefung.setUnterrichtsstunde(chbox_pr_ue.getValue());
             pruefung.setDatum(fromLocal);
@@ -164,21 +178,25 @@ public class PSPruefungController implements Initializable {
             pruefung.setKlasse(chbox_pr_klasse.getValue());
             DAO.getDaoInstance().updatePraktischePruefung(pruefung);
             menuController.getTbl_pruefungen().refresh();
-            
+//            Path ordnerPath = Verwaltungssoftware.getDirectoryFromPruefung(pruefung);
+//            String realName = pruefung.getName() + "_" + pruefung.getKlasse();
+//            if (!realName.equals(ordnerPath.toString())) {
+//                 
+//            }
         }
 
         //Wichtig
         menuController.getTbl_pruefungen().getSelectionModel().select(pruefung);
-        
+
         Stage myStage = (Stage) lbl_pr_lehrername.getScene().getWindow();
         myStage.setOnCloseRequest(null);
         myStage.fireEvent(new WindowEvent(myStage, WindowEvent.WINDOW_CLOSE_REQUEST));   //Stage schließen 
 
     }
-    
+
     @FXML
     private void onActionAbbrechen(ActionEvent event) {
-        
+
         if (pruefung != null) {
             PraPruefung scenePruefung = getPraPruefungFromScene();
             boolean notEqual = false;
@@ -188,7 +206,7 @@ public class PSPruefungController implements Initializable {
             if (pruefung.getUnterrichtsstunde() != scenePruefung.getUnterrichtsstunde()) {
                 notEqual = true;
             }
-            
+
             if (!Objects.equals(new java.sql.Date(pruefung.getDatum().getTime()).toLocalDate(),
                     new java.sql.Date(scenePruefung.getDatum().getTime()).toLocalDate())) {
                 notEqual = true;
@@ -209,7 +227,7 @@ public class PSPruefungController implements Initializable {
                 return;
             }
         }
-        
+
         ButtonType answer = Utilities.showYesNoDialog("Wollen Sie die Änderungen verwerfen?",
                 "Meldung",
                 Alert.AlertType.INFORMATION,
@@ -220,21 +238,21 @@ public class PSPruefungController implements Initializable {
             myStage.setOnCloseRequest(null);
             myStage.fireEvent(new WindowEvent(myStage, WindowEvent.WINDOW_CLOSE_REQUEST));   //Stage schließen 
         }
-        
+
     }
-    
+
     public boolean testInput() {
         return !fld_pr_name.textProperty().getValue().isEmpty()
                 && (isDateValid(dpicker_pr_date.getValue()));
     }
-    
+
     private void onActionClose(WindowEvent e) {
         if (e != null) {
             e.consume();   //Schließen des Fenster verhindern
         }
         onActionAbbrechen(null);
     }
-    
+
     public PraPruefung getPraPruefungFromScene() {
         Date fromLocal = Date.from(dpicker_pr_date.getValue().atStartOfDay(ZoneId.systemDefault()).toInstant());
         PraPruefung newP = new PraPruefung(
@@ -248,7 +266,7 @@ public class PSPruefungController implements Initializable {
         newP.setInternet(false);
         return newP;
     }
-    
+
     public static boolean isDateValid(LocalDate date) {
         if (date == null) {
             return false;
@@ -257,5 +275,5 @@ public class PSPruefungController implements Initializable {
                 && !date.getDayOfWeek().equals(DayOfWeek.SATURDAY)
                 && !date.isBefore(LocalDate.now());
     }
-    
+
 }

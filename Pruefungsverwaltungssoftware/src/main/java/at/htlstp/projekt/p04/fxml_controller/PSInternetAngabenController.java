@@ -10,21 +10,30 @@ import at.htlstp.projekt.p04.graphic_tools.Utilities;
 import at.htlstp.projekt.p04.model.PraPruefung;
 import at.htlstp.projekt.p04.pruefungsverwaltungssoftware.Verwaltungssoftware;
 import com.sun.javafx.scene.control.skin.DatePickerSkin;
+import java.io.File;
+import java.io.IOException;
 import java.net.URL;
+import java.nio.file.FileAlreadyExistsException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.StandardCopyOption;
 import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.ResourceBundle;
 import java.util.stream.Collectors;
+import javafx.collections.FXCollections;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
 import javafx.scene.Node;
 import javafx.scene.control.Alert;
 import javafx.scene.control.Button;
+import javafx.scene.control.ButtonType;
 import javafx.scene.control.DatePicker;
 import javafx.scene.control.Label;
+import javafx.scene.control.ListView;
 import javafx.scene.control.RadioButton;
 import javafx.scene.control.ToggleGroup;
 import javafx.scene.control.TreeItem;
@@ -32,6 +41,9 @@ import javafx.scene.control.TreeView;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.scene.layout.AnchorPane;
+import javafx.stage.FileChooser;
+import javafx.stage.Stage;
+import javafx.stage.WindowEvent;
 
 /**
  * FXML Controller class
@@ -65,13 +77,17 @@ public class PSInternetAngabenController implements Initializable {
     private ImageView imgview_inet_no;
     @FXML
     private Button btn_info_angaben;
+    @FXML
+    private ListView<String> lst_angaben;
 
     public void setMenucontroller(PSMenuController menucontroller) {
         this.menucontroller = menucontroller;
     }
 
+    FileWatcher fw;
     private TreeItem<String> aktTreeItem;
     private PraPruefung aktPruefung;
+    private List<PraPruefung> gleichePruefungen = new ArrayList<>(); 
 
     /**
      * Initializes the controller class.
@@ -96,7 +112,7 @@ public class PSInternetAngabenController implements Initializable {
             Node popupContent = datePickerSkin.getPopupContent();
             pane_scene.getChildren().add(popupContent);
             AnchorPane.setTopAnchor(popupContent, 95.0);
-            AnchorPane.setLeftAnchor(popupContent, 410.0);
+            AnchorPane.setLeftAnchor(popupContent, 445.0);
 
             data.valueProperty().addListener((e, oldV, newV) -> {
 
@@ -118,6 +134,9 @@ public class PSInternetAngabenController implements Initializable {
                             treeItem.setGraphic(getYesNoImageView(pr.getInternet()));
                             item.getChildren().add(treeItem);
                             aktTreeItem = pr.equals(aktPruefung) ? treeItem : null;
+                             if (aktPruefung.getUnterrichtsstunde().equals(pr.getUnterrichtsstunde())){
+                                 gleichePruefungen.add(pr); 
+                             }
                         }
                     }
                     rootItem.getChildren().add(item);
@@ -126,6 +145,7 @@ public class PSInternetAngabenController implements Initializable {
 
                 trview_ue.rootProperty().set(rootItem);
                 trview_ue.refresh();
+                System.out.println(gleichePruefungen);
             });
             data.setValue(new java.sql.Date(aktPruefung.getDatum().getTime()).toLocalDate());
 
@@ -147,6 +167,16 @@ public class PSInternetAngabenController implements Initializable {
             btnImage.setFitWidth(18.0);
             btnImage.setFitHeight(18.0);
             btn_info_angaben.setGraphic(btnImage);
+            //Angaben
+            Path angabenPath = Verwaltungssoftware.getDirectoryFromPruefung(aktPruefung).resolve("Angaben");
+            //WatchService
+            lst_angaben.setItems(FXCollections.observableArrayList());
+            fw = new FileWatcher(angabenPath);
+            lst_angaben.itemsProperty().bind(fw.valueProperty());
+            Thread start = new Thread(fw);
+            start.start();
+            Stage myStage = (Stage) btn_info_angaben.getScene().getWindow();
+            myStage.setOnCloseRequest(e -> onActionClose(e));
 
         }
     }
@@ -160,6 +190,43 @@ public class PSInternetAngabenController implements Initializable {
 
     @FXML
     private void onActionAbgabeHinzufuegen(ActionEvent event) {
+        Path angabenPath = Verwaltungssoftware.getDirectoryFromPruefung(aktPruefung).resolve("Angaben");
+        FileChooser fc = new FileChooser();
+        fc.setInitialDirectory(new File("C:"));
+        List<File> selectFiles = fc.showOpenMultipleDialog(pane_scene.getScene().getWindow());
+        if (selectFiles != null) {
+            for (File file : selectFiles) {
+                Path pFile = file.toPath();
+                try {
+                    Files.copy(pFile, angabenPath.resolve(pFile.getFileName()));
+                } catch (FileAlreadyExistsException f) {
+                    ButtonType answer = Utilities.showYesNoDialog(
+                            "Die Datei mit dem Namen \"" + pFile.getFileName() + "\" existiert bereits im Angabenverzeichnis auf. Soll diese Datei ersetzt werden?",
+                            "Kopieren einer Datei fehlgeschlagen!",
+                            Alert.AlertType.WARNING,
+                            Verwaltungssoftware.schooltoolsLogo(),
+                            Verwaltungssoftware.INFORMATION_MESSAGE_WIDTH
+                    );
+                    if (answer.equals(ButtonType.YES)) {
+                        try {
+                            Files.copy(pFile, angabenPath.resolve(pFile.getFileName()), StandardCopyOption.REPLACE_EXISTING);
+                        } catch (IOException ex) {
+                            Utilities.showMessageWithFixedWidth("Fehler",
+                                    "Fehler trat beim Löschen der alten Datei aus dem Angabenverzeichnis.",
+                                    "Um die Datei mit dem gleichen Namen in das Angabenverzeichnis zu kopieren, löschen oder schließen Sie die alte Datei und probieren Sie es erneut!",
+                                    Alert.AlertType.WARNING,
+                                    Verwaltungssoftware.schooltoolsLogo(),
+                                    Verwaltungssoftware.INFORMATION_MESSAGE_WIDTH,
+                                    false
+                            );
+                        }
+                    }
+
+                } catch (IOException ex) {
+                    Utilities.showMessageForExceptions(ex, Verwaltungssoftware.schooltoolsLogo(), true);
+                }
+            }
+        }
     }
 
     @FXML
@@ -174,6 +241,11 @@ public class PSInternetAngabenController implements Initializable {
                 Verwaltungssoftware.schooltoolsLogo(),
                 Verwaltungssoftware.INFORMATION_MESSAGE_WIDTH,
                 false);
+    }
+
+    private void onActionClose(WindowEvent e) {
+        fw.stopWatcher();
+        DAO.getDaoInstance().updatePraktischePruefung(aktPruefung);
     }
 
 }
