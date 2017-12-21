@@ -285,6 +285,8 @@ public class PSPruefungController implements Initializable {
         return !date.getDayOfWeek().equals(DayOfWeek.SUNDAY)
                 && !date.getDayOfWeek().equals(DayOfWeek.SATURDAY)
                 && !date.isBefore(LocalDate.now());
+        
+        //hallo
     }
 
 }
