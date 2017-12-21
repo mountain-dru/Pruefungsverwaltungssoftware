@@ -9,6 +9,7 @@ import at.htlstp.projekt.p04.ldap.LDAPAuthentification;
 import at.htlstp.projekt.p04.login.Login;
 import at.htlstp.projekt.p04.model.Lehrer;
 import at.htlstp.projekt.p04.model.PraPruefung;
+import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -18,6 +19,8 @@ import java.time.Duration;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.time.temporal.ChronoUnit;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Date;
 import java.util.Properties;
 import javafx.application.Application;
@@ -66,6 +69,25 @@ public class Verwaltungssoftware extends Application {
         return new Image(vsObject.getClass().getResource(LOGO_URL).toString());
     }
 
+    public static void deleteDirectory(File directory) {
+
+        if (directory.exists()) {
+            File[] files = directory.listFiles();
+            if (files.length > 0) {
+                for (int i = 0; i < files.length; i++) {
+                    if (files[i].isDirectory()) {
+                        deleteDirectory(files[i]);
+                    } else {
+                        files[i].delete();
+                    }
+                }
+            }
+            System.out.println(directory.delete());
+
+        }
+
+    }
+
     @Override
     public void start(Stage stage) {
         //Login 
@@ -80,9 +102,8 @@ public class Verwaltungssoftware extends Application {
                 //Datenbank hochladen 
                 Class.forName("at.htlstp.projekt.p04.db.HibernateJPAUtil");
                 Lehrer lr = DAO.getDaoInstance().getLehrerByKurzbezeichnung(kurzBezLehrer);
-                EntityManager em = HibernateJPAUtil.getEntityManagerFactory().createEntityManager(); 
+                EntityManager em = HibernateJPAUtil.getEntityManagerFactory().createEntityManager();
                 System.out.println(em.createQuery("select le from Lehrer le where le.lehrerKb = :le").setParameter("le", "lul").getResultList());
-               
 
                 CustomStage<PSMenuController> customstage
                         = new CustomStage<>(stage,
@@ -152,13 +173,22 @@ public class Verwaltungssoftware extends Application {
             }
         };
         dpick.setDayCellFactory(dayCellFactory);
-        
+
     }
-    public static Path getDirectoryFromPruefung(PraPruefung pruefung){
+
+    public static Path getDirectoryFromPruefung(PraPruefung pruefung) {
         Path p = Paths.get(Verwaltungssoftware.PRUEFER_PATH.toString() + "/"
-                        + pruefung.getLehrer().getLehrerKb().toUpperCase() + "_Pruefungen/"
-                        + pruefung.getName() + "_" + pruefung.getKlasse()); 
-        return p; 
+                + pruefung.getLehrer().getLehrerKb().toUpperCase() + "_Pruefungen/"
+                + pruefung.getName().replace(" ", "-") + "_" + pruefung.getKlasse());
+        return p;
+    }
+
+    public static void createDirectoryForPruefung(PraPruefung pr) throws IOException {
+        Path pathPruefung = Verwaltungssoftware.getDirectoryFromPruefung(pr);
+        Files.createDirectory(pathPruefung);
+        Files.createDirectory(pathPruefung.resolve(Paths.get("Angaben")));
+        Files.createDirectory(pathPruefung.resolve(Paths.get("Abgaben")));
+        Files.createDirectory(pathPruefung.resolve(Paths.get("Skripts")));
     }
 
     /**

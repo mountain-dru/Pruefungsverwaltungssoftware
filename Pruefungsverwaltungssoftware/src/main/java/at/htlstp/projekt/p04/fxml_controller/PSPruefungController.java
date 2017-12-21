@@ -16,12 +16,15 @@ import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.nio.file.StandardCopyOption;
 import java.time.DayOfWeek;
 import java.time.LocalDate;
 import java.time.ZoneId;
 import java.util.Date;
 import java.util.Objects;
 import java.util.ResourceBundle;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import javafx.collections.FXCollections;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
@@ -161,16 +164,17 @@ public class PSPruefungController implements Initializable {
             menuController.getTbl_pruefungen().getItems().add(pruefung);
             try {
                 //Neue Ordner anlegen 
-                Path pathPruefung = Verwaltungssoftware.getDirectoryFromPruefung(pruefung);
-                Files.createDirectory(pathPruefung);
-                Files.createDirectory(pathPruefung.resolve(Paths.get("Angaben")));
-                Files.createDirectory(pathPruefung.resolve(Paths.get("Abgaben")));
-                Files.createDirectory(pathPruefung.resolve(Paths.get("Skripts")));
+                //TODO: Was passiert wenn diese Ordner bereits existieren?
+                Verwaltungssoftware.createDirectoryForPruefung(pruefung);
             } catch (IOException ex) {
                 Utilities.showMessageForExceptions(ex, Verwaltungssoftware.schooltoolsLogo(), true);
             }
         } else {
             //Prüfung existiert bereits
+            Path pruefungsPath = Verwaltungssoftware.getDirectoryFromPruefung(pruefung);
+            String oldname = pruefung.getName();
+            String oldKlasse = pruefung.getKlasse().toString();
+
             pruefung.setName(fld_pr_name.getText());
             pruefung.setUnterrichtsstunde(chbox_pr_ue.getValue());
             pruefung.setDatum(fromLocal);
@@ -178,11 +182,18 @@ public class PSPruefungController implements Initializable {
             pruefung.setKlasse(chbox_pr_klasse.getValue());
             DAO.getDaoInstance().updatePraktischePruefung(pruefung);
             menuController.getTbl_pruefungen().refresh();
-//            Path ordnerPath = Verwaltungssoftware.getDirectoryFromPruefung(pruefung);
-//            String realName = pruefung.getName() + "_" + pruefung.getKlasse();
-//            if (!realName.equals(ordnerPath.toString())) {
-//                 
-//            }
+
+            if (!oldKlasse.equals(pruefung.getKlasse().toString())
+                    || !oldname.equals(pruefung.getName())) {
+                try {
+                    //Name oder Klasse haben sich verändert, Verzeichnisname muss angepasst werden
+                    Path newDirectory = Verwaltungssoftware.getDirectoryFromPruefung(pruefung);
+                    Files.move(pruefungsPath, newDirectory);
+                } catch (IOException ex) {
+                    Logger.getLogger(PSPruefungController.class.getName()).log(Level.SEVERE, null, ex);
+                }
+            }
+
         }
 
         //Wichtig

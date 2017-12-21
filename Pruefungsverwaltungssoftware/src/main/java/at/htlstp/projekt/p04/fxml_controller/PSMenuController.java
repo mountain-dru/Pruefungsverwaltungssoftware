@@ -15,11 +15,17 @@ import at.htlstp.projekt.p04.model.Lehrer;
 import at.htlstp.projekt.p04.model.PraPruefung;
 import at.htlstp.projekt.p04.model.Schueler;
 import at.htlstp.projekt.p04.pruefungsverwaltungssoftware.Verwaltungssoftware;
+import java.io.IOException;
 import java.net.URL;
+import java.nio.file.FileVisitOption;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.ResourceBundle;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import javafx.beans.property.SimpleObjectProperty;
 import javafx.beans.property.SimpleStringProperty;
 import javafx.collections.FXCollections;
@@ -41,12 +47,12 @@ import javafx.stage.Stage;
  * @author Dru
  */
 public class PSMenuController implements Initializable {
-    
+
     @FXML
     private Button btn_SchuelerZuweisen;
     @FXML
     private Button btn_AngabenInternet;
-    
+
     @FXML
     private Label lbl_Pruefer;
     @FXML
@@ -83,23 +89,23 @@ public class PSMenuController implements Initializable {
     //----------------------
 
     private final ObservableList<PraPruefung> pruefungen = FXCollections.observableArrayList();
-    
+
     public TableView<PraPruefung> getTbl_pruefungen() {
         return tbl_pruefungen;
     }
-    
+
     public Map<Klasse, List<Schueler>> getSchuelerInKlassenByLehrer() {
         return schuelerInKlassenByLehrer;
     }
-    
+
     public Map<Gruppe, List<Schueler>> getSchuelerInGruppenByLehrer() {
         return schuelerInGruppenByLehrer;
     }
-    
+
     public Lehrer getLehrer() {
         return lehrer;
     }
-    
+
     public void setLehrer(Lehrer lr) {
         this.lehrer = lr;
     }
@@ -141,11 +147,11 @@ public class PSMenuController implements Initializable {
             //Alle praktischen Prüfung aus der Datenbank laden und anzeigen 
             pruefungen.addAll(DAO.getDaoInstance().getPreaktischePruefungenByLehrer(lehrer));
             tbl_pruefungen.setItems(pruefungen);
-            
+
             Verwaltungssoftware.installSchooltoolsStyleSheet(tbl_pruefungen.getScene());
         }
     }
-    
+
     @FXML
     private void onActionNeuePruefung(ActionEvent event) {
         Stage dialogNeuePruefung = new Stage();
@@ -165,13 +171,13 @@ public class PSMenuController implements Initializable {
             Utilities.showMessageForExceptions(ex, Verwaltungssoftware.schooltoolsLogo(), true);
         }
     }
-    
+
     @FXML
     private void onActionSchuelerZuweisung(ActionEvent event) {
         if (!checkIfSelected("Meldung", "Um Schüler einer Prüfung hinzuzufügen, muss eine Zeile in der Tabelle selektiert werden!")) {
             return;
         }
-        
+
         Stage dialogSchuelerZuweisung = new Stage();
         try {
             CustomStage<PSSchuelerZuweisungController> customstage
@@ -187,7 +193,7 @@ public class PSMenuController implements Initializable {
             Utilities.showMessageForExceptions(ex, Verwaltungssoftware.schooltoolsLogo(), true);
         }
     }
-    
+
     @FXML
     private void onActionAngabenInternet(ActionEvent event) {
         if (!checkIfSelected("Meldung", "Sie müssen eine Zeile in der Tabelle  selektieren, um die Optionen zu konfigurieren")) {
@@ -208,27 +214,27 @@ public class PSMenuController implements Initializable {
             Utilities.showMessageForExceptions(ex, Verwaltungssoftware.schooltoolsLogo(), true);
         }
     }
-    
+
     @FXML
     private void onActionVerzeichnisseKopieren(ActionEvent event) {
     }
-    
+
     @FXML
     private void onActionPruefungStarten(ActionEvent event) {
     }
-    
+
     @FXML
     private void onActionPruefungBeenden(ActionEvent event) {
     }
-    
+
     @FXML
     private void onActionPruefungLoeschen(ActionEvent event) {
-        
+
         PraPruefung aktPruefung = tbl_pruefungen.getSelectionModel().getSelectedItem();
         if (!checkIfSelected("Meldung", "Sie müssen eine Zeile in der Tabelle  selektieren, um eine Prüfung zu löschen")) {
             return;
         }
-        
+
         ButtonType answer = Utilities.showYesNoDialog("Soll die Prüfung und die dazugehörigen Daten  wirklich endgültig gelöscht werden?",
                 "Meldung",
                 Alert.AlertType.INFORMATION,
@@ -238,9 +244,12 @@ public class PSMenuController implements Initializable {
             DAO.getDaoInstance().deletePraktischePruefung(aktPruefung);
             pruefungen.remove(aktPruefung);
             tbl_pruefungen.refresh();
+            Path toDelete = Verwaltungssoftware.getDirectoryFromPruefung(aktPruefung);
+            Verwaltungssoftware.deleteDirectory(toDelete.toFile());
         }
+
     }
-    
+
     @FXML
     private void onActionPruefungBearbeiten(ActionEvent event) {
         if (!checkIfSelected("Meldung", "Um eine Prüfung zu bearbeiten, müssen Sie eine Zeile in der Tabelle selektieren!")) {
@@ -258,13 +267,13 @@ public class PSMenuController implements Initializable {
             customstage.getController().setMenuController(this);
             customstage.getController().initialize(null, null);
             customstage.getController().initializePruefung(tbl_pruefungen.getSelectionModel().getSelectedItem());
-            
+
         } catch (Exception ex) {
             Utilities.showMessageForExceptions(ex, Verwaltungssoftware.schooltoolsLogo(), true);
         }
-        
+
     }
-    
+
     public boolean checkIfSelected(String messageTitle, String text) {
         PraPruefung aktPruefung = tbl_pruefungen.getSelectionModel().getSelectedItem();
         if (aktPruefung == null) {
@@ -274,9 +283,9 @@ public class PSMenuController implements Initializable {
                     Alert.AlertType.INFORMATION,
                     Verwaltungssoftware.schooltoolsLogo(), Verwaltungssoftware.INFORMATION_MESSAGE_WIDTH,
                     false);
-            
+
         }
         return aktPruefung != null;
     }
-    
+
 }

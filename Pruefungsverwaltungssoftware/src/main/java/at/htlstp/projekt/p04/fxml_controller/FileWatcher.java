@@ -52,7 +52,7 @@ public class FileWatcher extends Task<ObservableList<String>> {
             watcher = FileSystems.getDefault().newWatchService();
             path.register(watcher, ENTRY_CREATE, ENTRY_DELETE);
             while (true) {
-                WatchKey key;
+                WatchKey key = null;
                 try {
                     key = watcher.take();
                 } catch (ClosedWatchServiceException e) {
