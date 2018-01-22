@@ -11,6 +11,8 @@ import at.htlstp.projekt.p04.model.Lehrer;
 import at.htlstp.projekt.p04.model.PraPruefung;
 import java.io.File;
 import java.io.IOException;
+import java.io.InputStream;
+import java.net.URISyntaxException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -19,10 +21,10 @@ import java.time.Duration;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.time.temporal.ChronoUnit;
-import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Date;
 import java.util.Properties;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import javafx.application.Application;
 import static javafx.application.Application.launch;
 import javafx.scene.Scene;
@@ -37,8 +39,9 @@ public class Verwaltungssoftware extends Application {
 
     static {
         Properties ps_configs = new Properties();
-        try {
-            ps_configs.load(Files.newBufferedReader(Paths.get("src/main/java/at/htlstp/projekt/p04/pruefungsverwaltungssoftware/configs.properties")));
+        Verwaltungssoftware vsObject = new Verwaltungssoftware();
+        try (InputStream configFile = vsObject.getClass().getResource("/property/configs.properties").openStream()) {
+            ps_configs.load(configFile);
             INFORMATION_MESSAGE_WIDTH = Double.parseDouble((String) (ps_configs.get("INFORMATION_MESSAGE_WIDTH")));
             DTF = DateTimeFormatter.ofPattern(ps_configs.getProperty("DTF_PATTERN"));
             STYLE_URL = ps_configs.getProperty("STYLE_PATH");

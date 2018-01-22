@@ -36,6 +36,7 @@ import javafx.scene.control.Label;
 import javafx.scene.control.ListView;
 import javafx.scene.control.RadioButton;
 import javafx.scene.control.ToggleGroup;
+import javafx.scene.control.Tooltip;
 import javafx.scene.control.TreeItem;
 import javafx.scene.control.TreeView;
 import javafx.scene.image.Image;
@@ -80,6 +81,10 @@ public class PSInternetAngabenController implements Initializable {
     @FXML
     private ListView<String> lst_angaben;
 
+    private List<PraPruefung> concurrentPruefungen = new ArrayList<>();
+    @FXML
+    private Label lbl_inet_opt;
+
     public void setMenucontroller(PSMenuController menucontroller) {
         this.menucontroller = menucontroller;
     }
@@ -87,7 +92,6 @@ public class PSInternetAngabenController implements Initializable {
     FileWatcher fw;
     private TreeItem<String> aktTreeItem;
     private PraPruefung aktPruefung;
-    private List<PraPruefung> gleichePruefungen = new ArrayList<>(); 
 
     /**
      * Initializes the controller class.
@@ -95,6 +99,7 @@ public class PSInternetAngabenController implements Initializable {
     @Override
     public void initialize(URL url, ResourceBundle rb) {
         if (menucontroller != null) {
+
             //Aktuell selektiert Prüfung speichern
             aktPruefung = menucontroller.getTbl_pruefungen().getSelectionModel().getSelectedItem();
             //Initialisierungsarbeiten
@@ -103,6 +108,10 @@ public class PSInternetAngabenController implements Initializable {
 
             //WICHTIG - immer beim Initializieren aufrufen  
             List<PraPruefung> allPruefungen = DAO.getDaoInstance().getPreaktischePruefungen();
+            concurrentPruefungen = allPruefungen.stream()
+                    .filter((pr) -> pr.getDatum().equals(aktPruefung.getDatum())
+                    && pr.getUnterrichtsstunde().equals(aktPruefung.getUnterrichtsstunde()))
+                    .collect(Collectors.toList());
 
             //Termincalender einbleden und konfigurieren
             Verwaltungssoftware.installSchooltoolsStyleSheet(pane_scene.getScene());
@@ -115,7 +124,6 @@ public class PSInternetAngabenController implements Initializable {
             AnchorPane.setLeftAnchor(popupContent, 445.0);
 
             data.valueProperty().addListener((e, oldV, newV) -> {
-
                 //treeView bei jeder neuen Selektion eines neuen Datums neu rendern
                 Date fromLocal = Date.from(newV.atStartOfDay(ZoneId.systemDefault()).toInstant());
                 TreeItem<String> rootItem = new TreeItem<>(
@@ -133,36 +141,43 @@ public class PSInternetAngabenController implements Initializable {
                             TreeItem<String> treeItem = new TreeItem<>(pr.getName() + "(" + pr.getLehrer().getLehrerKb() + ")");
                             treeItem.setGraphic(getYesNoImageView(pr.getInternet()));
                             item.getChildren().add(treeItem);
-                            aktTreeItem = pr.equals(aktPruefung) ? treeItem : null;
-                             if (aktPruefung.getUnterrichtsstunde().equals(pr.getUnterrichtsstunde())){
-                                 gleichePruefungen.add(pr); 
-                             }
+                            aktTreeItem = pr.equals(aktPruefung) ? treeItem : aktTreeItem;
                         }
+
                     }
                     rootItem.getChildren().add(item);
                     rootItem.setExpanded(true);
                 }
-
                 trview_ue.rootProperty().set(rootItem);
                 trview_ue.refresh();
-                System.out.println(gleichePruefungen);
+                System.out.println(aktPruefung);
             });
+
             data.setValue(new java.sql.Date(aktPruefung.getDatum().getTime()).toLocalDate());
 
             lbl_name.setText(aktPruefung.getName());
             lbl_datum.setText(Verwaltungssoftware.parseDateToString(Verwaltungssoftware.DTF, aktPruefung.getDatum()));
             lbl_ur.setText(aktPruefung.getUnterrichtsstunde().toString());
-            radio_inet_yes.selectedProperty().addListener((d, oldV, newV) -> {
-                if (aktTreeItem != null) {
-                    aktTreeItem.setGraphic(getYesNoImageView(newV));
-                }
-                aktPruefung.setInternet(newV);
-            });
-            if (aktPruefung.getInternet()) {
-                radio_inet_yes.setSelected(true);
+
+            PraPruefung first = concurrentPruefungen
+                    .stream()
+                    .sorted((pr1, pr2) -> Integer.compare(pr1.getId(), pr2.getId()))
+                    .findFirst()
+                    .get();     //Es wird nie eine Exception geworfen, da es immer mindestens eine Prüfung gibt
+            if (!first.equals(aktPruefung)) {
+                Tooltip tp = new Tooltip("Der Internetzugang wird von " + first.getLehrer().getLehrerKb() + " bestimmen, da er/sie seine/ihre Prüfung zuerst eingetragen hat");
+                Tooltip.install(lbl_inet_opt, tp);
+                radio_inet_yes.setDisable(true);
+                radio_inet_no.setDisable(true);
             } else {
-                radio_inet_no.setSelected(true);
+                radio_inet_yes.selectedProperty().addListener((d, oldV, newV) -> {
+                    aktPruefung.setInternet(newV);
+                    if (aktTreeItem != null) {
+                        aktTreeItem.setGraphic(getYesNoImageView(newV));
+                    }
+                });
             }
+            selectRadio(aktPruefung.getInternet());
             ImageView btnImage = new ImageView(this.getClass().getResource("/images/info.png").toString());
             btnImage.setFitWidth(18.0);
             btnImage.setFitHeight(18.0);
@@ -246,6 +261,18 @@ public class PSInternetAngabenController implements Initializable {
     private void onActionClose(WindowEvent e) {
         fw.stopWatcher();
         DAO.getDaoInstance().updatePraktischePruefung(aktPruefung);
+    }
+
+    private void selectRadio(Boolean value) {
+        System.out.println("PLZ select: " + value);
+        if (value) {
+            radio_inet_yes.setSelected(true);
+            radio_inet_no.setSelected(false);
+        } else {
+            radio_inet_no.setSelected(true);
+            radio_inet_yes.setSelected(false);
+        }
+
     }
 
 }

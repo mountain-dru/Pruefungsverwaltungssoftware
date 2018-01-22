@@ -16,6 +16,7 @@ import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.FetchType;
 import javax.persistence.GeneratedValue;
+import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.JoinColumn;
 import javax.persistence.JoinTable;
@@ -25,6 +26,7 @@ import javax.persistence.SequenceGenerator;
 import javax.persistence.Table;
 import javax.persistence.Temporal;
 import javax.persistence.TemporalType;
+import java.util.Date;
 
 /**
  *
@@ -35,17 +37,13 @@ import javax.persistence.TemporalType;
 @SequenceGenerator(name = "pr_seq", sequenceName = "pr_seq")
 public class PraPruefung implements Serializable {
 
+    //Variablendeklaration
     private Integer id;
     private String name;
     private Verwaltungssoftware.Unterrichtseinheit unterrichtsstunde;
     private Date datum;
     private Boolean internet;
     private Verwaltungssoftware.PR_status status;
-
-    private Gegenstand gegenstand;
-    private Lehrer lehrer;
-    private Klasse klasse;
-    private Set<Schueler> schuelerSet = new HashSet<>();
 
     @Id
     @Column(name = "pr_id")
@@ -54,26 +52,14 @@ public class PraPruefung implements Serializable {
         return id;
     }
 
-    public void setId(Integer id) {
-        this.id = id;
-    }
-
-    @Column(name = "pr_name", nullable = false)
+    @Column(name = "pr_name", nullable = false, length = 100)
     public String getName() {
         return name;
     }
 
-    public void setName(String name) {
-        this.name = name;
-    }
-
-    @Column(name = "pr_utnerrichtsstunde", nullable = false)
+    @Column(name = "pr_unterrichtsstunde", nullable = false)
     public Verwaltungssoftware.Unterrichtseinheit getUnterrichtsstunde() {
         return unterrichtsstunde;
-    }
-
-    public void setUnterrichtsstunde(Verwaltungssoftware.Unterrichtseinheit unterrichtsstunde) {
-        this.unterrichtsstunde = unterrichtsstunde;
     }
 
     @Column(name = "pr_status", nullable = false)
@@ -81,31 +67,25 @@ public class PraPruefung implements Serializable {
         return status;
     }
 
-    public void setStatus(Verwaltungssoftware.PR_status status) {
-        this.status = status;
-    }
-
-    @Temporal(TemporalType.DATE)
-    @Column(name = "pr_datum", nullable = false)
-    public Date getDatum() {
-        return datum;
-    }
-
-    public void setDatum(Date datum) {
-        this.datum = datum;
-    }
-
     @Column(name = "pr_internet")
     public Boolean getInternet() {
         return internet;
     }
 
-    public void setInternet(Boolean internet) {
-        this.internet = internet;
+    @Temporal(value = TemporalType.DATE)
+    @Column(name = "pr_datum", nullable = false)
+    public Date getDatum() {
+        return datum;
     }
 
     public PraPruefung() {
     }
+    //Beziehungen, Setter, weitere Konstruktoren
+
+    private Gegenstand gegenstand;
+    private Lehrer lehrer;
+    private Klasse klasse;
+    private Set<Schueler> schuelerSet = new HashSet<>();
 
     @ManyToOne
     @JoinColumn(name = "pr_gegenstand", nullable = false)
@@ -189,9 +169,28 @@ public class PraPruefung implements Serializable {
         return "PraPruefung{" + "id=" + id + ", name=" + name + ", unterrichtsstunde=" + unterrichtsstunde + ", datum=" + datum + ", internet=" + internet + ", status=" + status + ", gegenstand=" + gegenstand + ", lehrer=" + lehrer + ", klasse=" + klasse + '}';
     }
 
-   
+    public void setUnterrichtsstunde(Verwaltungssoftware.Unterrichtseinheit unterrichtsstunde) {
+        this.unterrichtsstunde = unterrichtsstunde;
+    }
 
-  
-    
+    public void setName(String name) {
+        this.name = name;
+    }
+
+    public void setId(Integer id) {
+        this.id = id;
+    }
+
+    public void setDatum(Date datum) {
+        this.datum = datum;
+    }
+
+    public void setStatus(Verwaltungssoftware.PR_status status) {
+        this.status = status;
+    }
+
+    public void setInternet(Boolean internet) {
+        this.internet = internet;
+    }
 
 }

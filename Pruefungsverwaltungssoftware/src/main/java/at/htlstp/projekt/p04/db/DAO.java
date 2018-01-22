@@ -96,7 +96,7 @@ public class DAO implements IDAO, AutoCloseable {
             tr.commit();
             return true;
         } catch (Exception e) {
-            if (tr != null) {
+            if (tr != null && tr.isActive()) {
                 tr.rollback();
             }
             System.out.println(e);
@@ -117,7 +117,7 @@ public class DAO implements IDAO, AutoCloseable {
             tr.commit();
             return true;
         } catch (Exception e) {
-            if (tr != null) {
+            if (tr != null && tr.isActive()) {
                 tr.rollback();
             }
             System.out.println(e);
@@ -138,13 +138,12 @@ public class DAO implements IDAO, AutoCloseable {
             tr.commit();
             return true;
         } catch (Exception e) {
-            if (tr != null) {
+            if (tr != null && tr.isActive()) {
                 tr.rollback();
             }
             System.out.println(e);
             return false;
         } finally {
-
             em.close();
         }
     }
@@ -213,10 +212,10 @@ public class DAO implements IDAO, AutoCloseable {
     public Lehrer getLehrerByKurzbezeichnung(String kurzBezeichung) {
         EntityManager entityManager = HibernateJPAUtil.getEntityManagerFactory().createEntityManager();
         try {
-            TypedQuery<Lehrer> lehrerQuery = entityManager.createQuery("select le from Lehrer le where le.lehrerKb = :lehrerKurzbezeichnung", Lehrer.class); 
-            lehrerQuery.setParameter("lehrerKurzbezeichnung", kurzBezeichung); 
-            Lehrer ergebnis = lehrerQuery.getSingleResult(); 
-            return ergebnis; 
+            TypedQuery<Lehrer> lehrerQuery = entityManager.createQuery("select le from Lehrer le where le.lehrerKb = :lehrerKurzbezeichnung", Lehrer.class);
+            lehrerQuery.setParameter("lehrerKurzbezeichnung", kurzBezeichung);
+            Lehrer ergebnis = lehrerQuery.getSingleResult();
+            return ergebnis;
         } finally {
             entityManager.close();
         }

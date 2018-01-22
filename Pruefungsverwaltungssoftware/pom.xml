@@ -38,14 +38,6 @@
             <artifactId>hibernate-entitymanager</artifactId>
             <version>4.3.1.Final</version>
         </dependency>
-        <!-- https://mvnrepository.com/artifact/com.gluonhq/charm-down-core -->
-        <dependency>
-            <groupId>com.gluonhq</groupId>
-            <artifactId>charm-down-core</artifactId>
-            <version>3.6.0</version>
-        </dependency>
-
-
     </dependencies>
     <build>
        
