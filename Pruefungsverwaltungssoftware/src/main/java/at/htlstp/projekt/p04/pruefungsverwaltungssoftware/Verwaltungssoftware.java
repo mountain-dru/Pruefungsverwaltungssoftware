@@ -49,6 +49,8 @@ public class Verwaltungssoftware extends Application {
             OPERATING_SYSTEM = System.getProperty("os.name");
             PRUEFER_PATH = Paths.get(ps_configs.getProperty("PRUEFER_PATH"));
             SCHUELER_PATH = Paths.get(ps_configs.getProperty("SCHUELER_PATH"));
+            
+            
         } catch (IOException ex) {
             Utilities.showMessageForExceptions(ex, schooltoolsLogo(), true);
         }
