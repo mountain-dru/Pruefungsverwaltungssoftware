@@ -208,7 +208,6 @@ public class PSMenuController implements Initializable {
 
             btn_daten.disableProperty().bind(Bindings.createBooleanBinding(() -> {
                 PraPruefung sel = tbl_pruefungen.getSelectionModel().getSelectedItem();
-                System.out.println("AUFGERUFEN");
                 return !(sel != null && !sel.getSchuelerSet().isEmpty()
                         && !sel.getStatus().equals(Verwaltungssoftware.PR_status.BEENDET));
             }, tbl_pruefungen.getSelectionModel().selectedItemProperty()));

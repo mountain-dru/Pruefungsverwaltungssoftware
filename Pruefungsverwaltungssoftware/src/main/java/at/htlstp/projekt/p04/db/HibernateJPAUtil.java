@@ -17,6 +17,9 @@ import javax.persistence.Persistence;
 public class HibernateJPAUtil {
     private static final EntityManagerFactory em; 
     
+    
+    
+    
     static {
         try {
             //JPA-konforme Implementierung 
