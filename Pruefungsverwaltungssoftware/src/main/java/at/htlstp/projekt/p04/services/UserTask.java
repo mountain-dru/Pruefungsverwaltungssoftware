@@ -39,8 +39,8 @@ public class UserTask extends Task<Double> {
             Path path2 = Verwaltungssoftware.getDirectoryFromPruefung(pruefung).resolve(Paths.get("Skripts"));
             Runtime r = Runtime.getRuntime();
             Process p = null;
-            p = r.exec("cmd /c Start \"\" /B del " + path2 + "\\activeusers.txt");
-            p.waitFor();
+            //p = r.exec("cmd /c Start \"\" /B del " + path2 + "\\activeusers.txt");
+            //p.waitFor();
             double d = 100 / schueler.size();
             try(BufferedReader bf = Files.newBufferedReader(Paths.get(path2.toAbsolutePath().toString(), "activeusers.txt"))){
               String line = null; 

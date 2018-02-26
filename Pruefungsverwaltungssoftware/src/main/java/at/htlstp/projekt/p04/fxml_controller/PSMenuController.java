@@ -19,6 +19,7 @@ import at.htlstp.projekt.p04.services.UserDelTask;
 import at.htlstp.projekt.p04.services.UserTask;
 import java.awt.Desktop;
 import java.io.BufferedWriter;
+import java.io.File;
 import java.io.IOException;
 import java.net.URL;
 import java.nio.file.Files;
@@ -30,6 +31,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Random;
 import java.util.ResourceBundle;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import javafx.beans.binding.Bindings;
 import javafx.beans.binding.BooleanBinding;
 import javafx.beans.property.SimpleObjectProperty;
@@ -215,7 +218,9 @@ public class PSMenuController implements Initializable {
 
             btn_PruefungStarten.disableProperty().bind(Bindings.createBooleanBinding(() -> {
                 PraPruefung sel = tbl_pruefungen.getSelectionModel().getSelectedItem();
-                if (sel == null) return true; 
+                if (sel == null) {
+                    return true;
+                }
                 Path pathToSchuelerList = Verwaltungssoftware.getDirectoryFromPruefung(sel).resolve("Skripts/activeusers.txt");     //Schuelerdaten müssen bereits angelegt worden sein.
                 return !(pathToSchuelerList.toFile().exists()
                         && !sel.getSchuelerSet().isEmpty()
@@ -317,8 +322,19 @@ public class PSMenuController implements Initializable {
             return;
         }
 
+//         Path userPruefer = Paths.get(Verwaltungssoftware.getDirectoryFromPruefung(aktPruefung).toAbsolutePath().toString(), "user.txt");
+//        
+//        if(Files.exists(userPruefer)){
+//            System.out.println("gibts");
+//        }else{
+//            System.out.println("gibts nd ");
+//        }
+        
+       
+        tbl_pruefungen.disableProperty().set(true);
         Runnable run = () -> {
             aktPruefung.setStatus(Verwaltungssoftware.PR_status.GESTARTET);
+            tbl_pruefungen.disableProperty().set(false);
             tbl_pruefungen.getSelectionModel().select(null);
             tbl_pruefungen.getSelectionModel().select(aktPruefung);
             tbl_pruefungen.refresh();
@@ -346,8 +362,10 @@ public class PSMenuController implements Initializable {
         if (!checkIfSelected("Meldung", "Sie müssen eine Zeile in der Tabelle  selektieren, um eine Prüfung zu beenden")) {
             return;
         }
+        tbl_pruefungen.disableProperty().set(true);
         Runnable run = () -> {
             aktPruefung.setStatus(Verwaltungssoftware.PR_status.BEENDET);
+            tbl_pruefungen.disableProperty().set(false);
             tbl_pruefungen.getSelectionModel().select(null);
             tbl_pruefungen.getSelectionModel().select(aktPruefung);
             tbl_pruefungen.refresh();
@@ -364,7 +382,6 @@ public class PSMenuController implements Initializable {
         lbl_User.setText("Userentfernung: ");
         t.start();
         Hibernate_DAO.getDaoInstance().updatePraktischePruefung(aktPruefung);
-
 
     }
 
@@ -436,6 +453,17 @@ public class PSMenuController implements Initializable {
         if (!checkIfSelected("Meldung", "Sie müssen eine Zeile in der Tabelle  selektieren, um eine Prüfung zu starten")) {
             return;
         }
+        Path userFile = Verwaltungssoftware.getDirectoryFromPruefung(aktPruefung).resolve(Paths.get("Skripts/activeusers.txt"));
+        Path userPruefer = Paths.get(Verwaltungssoftware.getDirectoryFromPruefung(aktPruefung).toAbsolutePath().toString(), "user.txt");
+        
+        if(aktPruefung.getStatus().equals(Verwaltungssoftware.PR_status.GESTARTET)){
+            try {
+                Desktop.getDesktop().open(userPruefer.toFile());
+            } catch (IOException ex) {
+                Logger.getLogger(PSMenuController.class.getName()).log(Level.SEVERE, null, ex);
+            }
+            return;
+        }
 
         Runtime r = Runtime.getRuntime();
         Process p = null;
@@ -459,8 +487,7 @@ public class PSMenuController implements Initializable {
 //
 //        });
 //       t.start();
-        Path userFile = Verwaltungssoftware.getDirectoryFromPruefung(aktPruefung).resolve(Paths.get("Skripts/activeusers.txt"));
-        Path userPruefer = Paths.get(Verwaltungssoftware.getDirectoryFromPruefung(aktPruefung).toAbsolutePath().toString(), "user.txt");
+        
         try (BufferedWriter bw_user = Files.newBufferedWriter(userFile);
                 BufferedWriter bw_pruefer = Files.newBufferedWriter(userPruefer)) {
             String line = null;
