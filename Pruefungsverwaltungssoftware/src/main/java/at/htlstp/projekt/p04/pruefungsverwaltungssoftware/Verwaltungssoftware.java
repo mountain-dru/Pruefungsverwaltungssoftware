@@ -1,7 +1,7 @@
 package at.htlstp.projekt.p04.pruefungsverwaltungssoftware;
 
-import at.htlstp.projekt.p04.db.DAO;
 import at.htlstp.projekt.p04.db.HibernateJPAUtil;
+import at.htlstp.projekt.p04.db.Hibernate_DAO;
 import at.htlstp.projekt.p04.fxml_controller.PSMenuController;
 import at.htlstp.projekt.p04.graphic_tools.CustomStage;
 import at.htlstp.projekt.p04.graphic_tools.Utilities;
@@ -49,8 +49,8 @@ public class Verwaltungssoftware extends Application {
             OPERATING_SYSTEM = System.getProperty("os.name");
             PRUEFER_PATH = Paths.get(ps_configs.getProperty("PRUEFER_PATH"));
             SCHUELER_PATH = Paths.get(ps_configs.getProperty("SCHUELER_PATH"));
-            
-            
+            SKRIPTS_PATH = Paths.get(ps_configs.getProperty("SKRIPTS_PATH"));
+
         } catch (IOException ex) {
             Utilities.showMessageForExceptions(ex, schooltoolsLogo(), true);
         }
@@ -63,6 +63,7 @@ public class Verwaltungssoftware extends Application {
     public static String OPERATING_SYSTEM;
     public static Path SCHUELER_PATH;
     public static Path PRUEFER_PATH;
+    public static Path SKRIPTS_PATH;
 
     public static void installSchooltoolsStyleSheet(Scene rootScene) {
         Verwaltungssoftware vsObject = new Verwaltungssoftware();
@@ -106,7 +107,7 @@ public class Verwaltungssoftware extends Application {
                 String kurzBezLehrer = login.getValidUser();
                 //Datenbank hochladen 
                 Class.forName("at.htlstp.projekt.p04.db.HibernateJPAUtil");
-                Lehrer lr = DAO.getDaoInstance().getLehrerByKurzbezeichnung(kurzBezLehrer);
+                Lehrer lr = Hibernate_DAO.getDaoInstance().getLehrerByKurzbezeichnung(kurzBezLehrer);
                 EntityManager em = HibernateJPAUtil.getEntityManagerFactory().createEntityManager();
                 System.out.println(em.createQuery("select le from Lehrer le where le.lehrerKb = :le").setParameter("le", "lul").getResultList());
 

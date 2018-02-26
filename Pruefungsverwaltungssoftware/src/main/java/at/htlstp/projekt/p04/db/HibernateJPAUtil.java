@@ -15,16 +15,14 @@ import javax.persistence.Persistence;
  * @author Dru
  */
 public class HibernateJPAUtil {
-
     private static final EntityManagerFactory em; 
     
     static {
         try {
-            // Create the SessionFactory from standard (hibernate.cfg.xml) 
-            // config file.
-           em = Persistence.createEntityManagerFactory("VMM_nost_pu"); 
-        } catch (Throwable ex) {
-            // Log the exception. 
+            //JPA-konforme Implementierung 
+           em = Persistence.createEntityManagerFactory("VMM_nost_pu");      //Name der Persistenzeinheit
+        } catch (Throwable ex) {        //Alle Fehler erkennen und
+            // Exception loggen  
             System.err.println("Initial EntityManager creation failed." + ex);
             throw new ExceptionInInitializerError(ex);
         }

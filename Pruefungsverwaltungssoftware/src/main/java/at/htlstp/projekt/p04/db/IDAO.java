@@ -17,26 +17,15 @@ import java.util.List;
 public interface IDAO extends Serializable {
 
     public Lehrer getLehrerByKurzbezeichnung(String kurzBez);
-
     public List<Schueler> getSchuelerByGruppe(Gruppe gruppe);
-
     public List<Schueler> getSchuelerByKlasse(Klasse klasse);
-
     public List<Gegenstand> getGegenstaendeInKlasseByLehrer(Lehrer lehrer, Klasse klasse);
-
     public List<Klasse> getKlassenByLehrer(Lehrer lehrer);
-
     public boolean persistPraktischePruefung(PraPruefung pr);
-
     public boolean updatePraktischePruefung(PraPruefung pr);
-
     public List<PraPruefung> getPreaktischePruefungenByLehrer(Lehrer lehrer);
-
     public boolean deletePraktischePruefung(PraPruefung pruefung);
-
     public List<Schueler> getSchuelerFromPruefung(PraPruefung pruefung);
-
     public List<Gruppe> getGruppenByLehrer(Lehrer lehrer);
-
     public List<PraPruefung> getPreaktischePruefungen();
 }

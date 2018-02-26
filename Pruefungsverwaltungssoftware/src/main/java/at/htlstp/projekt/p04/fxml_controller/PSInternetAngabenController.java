@@ -5,7 +5,7 @@
  */
 package at.htlstp.projekt.p04.fxml_controller;
 
-import at.htlstp.projekt.p04.db.DAO;
+import at.htlstp.projekt.p04.db.Hibernate_DAO;
 import at.htlstp.projekt.p04.graphic_tools.Utilities;
 import at.htlstp.projekt.p04.model.PraPruefung;
 import at.htlstp.projekt.p04.pruefungsverwaltungssoftware.Verwaltungssoftware;
@@ -23,6 +23,7 @@ import java.util.Date;
 import java.util.List;
 import java.util.ResourceBundle;
 import java.util.stream.Collectors;
+import javafx.beans.binding.Bindings;
 import javafx.collections.FXCollections;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
@@ -67,7 +68,6 @@ public class PSInternetAngabenController implements Initializable {
     private Label lbl_datum;
     @FXML
     private Label lbl_ur;
-
     @FXML
     private RadioButton radio_inet_no;
     @FXML
@@ -80,10 +80,6 @@ public class PSInternetAngabenController implements Initializable {
     private Button btn_info_angaben;
     @FXML
     private ListView<String> lst_angaben;
-
-    private List<PraPruefung> concurrentPruefungen = new ArrayList<>();
-    @FXML
-    private Label lbl_inet_opt;
 
     public void setMenucontroller(PSMenuController menucontroller) {
         this.menucontroller = menucontroller;
@@ -99,7 +95,6 @@ public class PSInternetAngabenController implements Initializable {
     @Override
     public void initialize(URL url, ResourceBundle rb) {
         if (menucontroller != null) {
-
             //Aktuell selektiert Prüfung speichern
             aktPruefung = menucontroller.getTbl_pruefungen().getSelectionModel().getSelectedItem();
             //Initialisierungsarbeiten
@@ -107,13 +102,9 @@ public class PSInternetAngabenController implements Initializable {
             imgview_inet_yes.setImage(getYesNoImageView(true).getImage());
 
             //WICHTIG - immer beim Initializieren aufrufen  
-            List<PraPruefung> allPruefungen = DAO.getDaoInstance().getPreaktischePruefungen();
-            concurrentPruefungen = allPruefungen.stream()
-                    .filter((pr) -> pr.getDatum().equals(aktPruefung.getDatum())
-                    && pr.getUnterrichtsstunde().equals(aktPruefung.getUnterrichtsstunde()))
-                    .collect(Collectors.toList());
+            List<PraPruefung> allPruefungen = Hibernate_DAO.getDaoInstance().getPreaktischePruefungen();
 
-            //Termincalender einbleden und konfigurieren
+            //Terminkalender einbleden und konfigurieren
             Verwaltungssoftware.installSchooltoolsStyleSheet(pane_scene.getScene());
             DatePicker data = new DatePicker();
             Verwaltungssoftware.disableSaturdaySunday(data);
@@ -123,6 +114,7 @@ public class PSInternetAngabenController implements Initializable {
             AnchorPane.setTopAnchor(popupContent, 95.0);
             AnchorPane.setLeftAnchor(popupContent, 445.0);
 
+            trview_ue.showRootProperty().set(false);
             data.valueProperty().addListener((e, oldV, newV) -> {
                 //treeView bei jeder neuen Selektion eines neuen Datums neu rendern
                 Date fromLocal = Date.from(newV.atStartOfDay(ZoneId.systemDefault()).toInstant());
@@ -150,7 +142,6 @@ public class PSInternetAngabenController implements Initializable {
                 }
                 trview_ue.rootProperty().set(rootItem);
                 trview_ue.refresh();
-                System.out.println(aktPruefung);
             });
 
             data.setValue(new java.sql.Date(aktPruefung.getDatum().getTime()).toLocalDate());
@@ -159,29 +150,27 @@ public class PSInternetAngabenController implements Initializable {
             lbl_datum.setText(Verwaltungssoftware.parseDateToString(Verwaltungssoftware.DTF, aktPruefung.getDatum()));
             lbl_ur.setText(aktPruefung.getUnterrichtsstunde().toString());
 
-            PraPruefung first = concurrentPruefungen
-                    .stream()
-                    .sorted((pr1, pr2) -> Integer.compare(pr1.getId(), pr2.getId()))
-                    .findFirst()
-                    .get();     //Es wird nie eine Exception geworfen, da es immer mindestens eine Prüfung gibt
-            if (!first.equals(aktPruefung)) {
-                Tooltip tp = new Tooltip("Der Internetzugang wird von " + first.getLehrer().getLehrerKb() + " bestimmen, da er/sie seine/ihre Prüfung zuerst eingetragen hat");
-                Tooltip.install(lbl_inet_opt, tp);
-                radio_inet_yes.setDisable(true);
-                radio_inet_no.setDisable(true);
-            } else {
-                radio_inet_yes.selectedProperty().addListener((d, oldV, newV) -> {
-                    aktPruefung.setInternet(newV);
-                    if (aktTreeItem != null) {
-                        aktTreeItem.setGraphic(getYesNoImageView(newV));
-                    }
-                });
-            }
-            selectRadio(aktPruefung.getInternet());
             ImageView btnImage = new ImageView(this.getClass().getResource("/images/info.png").toString());
             btnImage.setFitWidth(18.0);
             btnImage.setFitHeight(18.0);
             btn_info_angaben.setGraphic(btnImage);
+
+            //Internetoption
+            radio_inet_yes.selectedProperty().addListener((d, oldV, newV) -> {
+                aktPruefung.setInternet(newV == true);
+                aktTreeItem.setGraphic(getYesNoImageView(newV));
+                allPruefungen.forEach(pr -> {
+                   if (pr.getId().equals(aktPruefung.getId())){
+                       pr.setInternet(aktPruefung.getInternet());   //Internetoption auch in der TreeView Liste updaten
+                   }
+                }); 
+            });
+            if (aktPruefung.getInternet()) {
+                radio_inet_yes.selectedProperty().set(true);
+            } else {
+                radio_inet_no.selectedProperty().set(true);
+            }
+
             //Angaben
             Path angabenPath = Verwaltungssoftware.getDirectoryFromPruefung(aktPruefung).resolve("Angaben");
             //WatchService
@@ -192,7 +181,7 @@ public class PSInternetAngabenController implements Initializable {
             start.start();
             Stage myStage = (Stage) btn_info_angaben.getScene().getWindow();
             myStage.setOnCloseRequest(e -> onActionClose(e));
-
+            trview_ue.showRootProperty().set(false);
         }
     }
 
@@ -227,7 +216,7 @@ public class PSInternetAngabenController implements Initializable {
                             Files.copy(pFile, angabenPath.resolve(pFile.getFileName()), StandardCopyOption.REPLACE_EXISTING);
                         } catch (IOException ex) {
                             Utilities.showMessageWithFixedWidth("Fehler",
-                                    "Fehler trat beim Löschen der alten Datei aus dem Angabenverzeichnis.",
+                                    "Ein Fehler trat beim Löschen der alten Datei aus dem Angabenverzeichnis.",
                                     "Um die Datei mit dem gleichen Namen in das Angabenverzeichnis zu kopieren, löschen oder schließen Sie die alte Datei und probieren Sie es erneut!",
                                     Alert.AlertType.WARNING,
                                     Verwaltungssoftware.schooltoolsLogo(),
@@ -260,19 +249,7 @@ public class PSInternetAngabenController implements Initializable {
 
     private void onActionClose(WindowEvent e) {
         fw.stopWatcher();
-        DAO.getDaoInstance().updatePraktischePruefung(aktPruefung);
-    }
-
-    private void selectRadio(Boolean value) {
-        System.out.println("PLZ select: " + value);
-        if (value) {
-            radio_inet_yes.setSelected(true);
-            radio_inet_no.setSelected(false);
-        } else {
-            radio_inet_no.setSelected(true);
-            radio_inet_yes.setSelected(false);
-        }
-
+        Hibernate_DAO.getDaoInstance().updatePraktischePruefung(aktPruefung);
     }
 
 }

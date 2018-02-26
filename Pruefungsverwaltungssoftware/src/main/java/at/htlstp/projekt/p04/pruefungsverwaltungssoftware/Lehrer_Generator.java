@@ -5,7 +5,7 @@
  */
 package at.htlstp.projekt.p04.pruefungsverwaltungssoftware;
 
-import at.htlstp.projekt.p04.db.DAO;
+
 import at.htlstp.projekt.p04.db.HibernateJPAUtil;
 import at.htlstp.projekt.p04.model.Lehrer;
 import java.io.BufferedWriter;

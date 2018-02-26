@@ -25,334 +25,342 @@ import javax.persistence.Transient;
  */
 @Entity
 @Table(name = "schueler", schema = "public")
-@SequenceGenerator(name="ssd_seq", sequenceName="ssd_seq", allocationSize=1)
+@SequenceGenerator(name = "ssd_seq", sequenceName = "ssd_seq", allocationSize = 1)
 public class Schueler implements java.io.Serializable, Comparable<Schueler> {
 
-	private int ssdId;
-	private Klasse klasse;
-	private Ort ort;
-	private int ssdAnmeldenr;
-	private Date ssdGebdatum;
-	private int ssdKatnr;
-	private String ssdStr;
-	private String ssdVorname;
-	private String ssdZuname;
-	private String ssdPasswort;
-	private String staKurzbez;
-	private String staLangbez;
-	private String ssdEmail;
-	private Date ausgetreten;
-	private String ssdGeschlecht;
-	private Set<Gruppe> gruppen = new HashSet<>(0);
-	private Set<Erziehungsberechtigter> erziehungsberechtigte = new HashSet<>(0);
-	private Set<Mahnung> mahnungen = new HashSet<>(0);
-	private Set<Pruefung> pruefungen = new HashSet<>(0);
-	private Set<Semesternote> semesternoten = new HashSet<>(0);
-	private Set<LaufendeNote> laufendeNoten = new HashSet<>(0);
-	private boolean isVolljaehrig;
+    private int ssdId;
+    private Klasse klasse;
+    private Ort ort;
+    private int ssdAnmeldenr;
+    private Date ssdGebdatum;
+    private int ssdKatnr;
+    private String ssdStr;
+    private String ssdVorname;
+    private String ssdZuname;
+    private String ssdPasswort;
+    private String staKurzbez;
+    private String staLangbez;
+    private String ssdEmail;
+    private Date ausgetreten;
+    private String ssdGeschlecht;
+    private Set<Gruppe> gruppen = new HashSet<>(0);
+    private Set<Erziehungsberechtigter> erziehungsberechtigte = new HashSet<>(0);
+    private Set<Mahnung> mahnungen = new HashSet<>(0);
+    private Set<Pruefung> pruefungen = new HashSet<>(0);
+    private Set<Semesternote> semesternoten = new HashSet<>(0);
+    private Set<LaufendeNote> laufendeNoten = new HashSet<>(0);
+    private boolean isVolljaehrig;
 
-	public Schueler() {
-	}
+    public Schueler() {
+    }
 
-	public Schueler(Ort ort, int ssdAnmeldenr, Date ssdGebdatum, int ssdKatnr, String ssdStr, String ssdVorname, String ssdZuname, String staKurzbez, String staLangbez) {
-		this.ort = ort;
-		this.ssdAnmeldenr = ssdAnmeldenr;
-		this.ssdGebdatum = ssdGebdatum;
-		this.ssdKatnr = ssdKatnr;
-		this.ssdStr = ssdStr;
-		this.ssdVorname = ssdVorname;
-		this.ssdZuname = ssdZuname;
-		this.staKurzbez = staKurzbez;
-		this.staLangbez = staLangbez;
-	}
+    public Schueler(Ort ort, int ssdAnmeldenr, Date ssdGebdatum, int ssdKatnr, String ssdStr, String ssdVorname, String ssdZuname, String staKurzbez, String staLangbez) {
+        this.ort = ort;
+        this.ssdAnmeldenr = ssdAnmeldenr;
+        this.ssdGebdatum = ssdGebdatum;
+        this.ssdKatnr = ssdKatnr;
+        this.ssdStr = ssdStr;
+        this.ssdVorname = ssdVorname;
+        this.ssdZuname = ssdZuname;
+        this.staKurzbez = staKurzbez;
+        this.staLangbez = staLangbez;
+    }
 
-	public Schueler(int ssdId, Ort ort, int ssdAnmeldenr, Date ssdGebdatum, int ssdKatnr, String ssdStr, String ssdVorname, String ssdZuname, String staKurzbez, String staLangbez) {
-		this.ssdId = ssdId;
-		this.ort = ort;
-		this.ssdAnmeldenr = ssdAnmeldenr;
-		this.ssdGebdatum = ssdGebdatum;
-		this.ssdKatnr = ssdKatnr;
-		this.ssdStr = ssdStr;
-		this.ssdVorname = ssdVorname;
-		this.ssdZuname = ssdZuname;
-		this.staKurzbez = staKurzbez;
-		this.staLangbez = staLangbez;
-	}
+    public Schueler(int ssdId, Ort ort, int ssdAnmeldenr, Date ssdGebdatum, int ssdKatnr, String ssdStr, String ssdVorname, String ssdZuname, String staKurzbez, String staLangbez) {
+        this.ssdId = ssdId;
+        this.ort = ort;
+        this.ssdAnmeldenr = ssdAnmeldenr;
+        this.ssdGebdatum = ssdGebdatum;
+        this.ssdKatnr = ssdKatnr;
+        this.ssdStr = ssdStr;
+        this.ssdVorname = ssdVorname;
+        this.ssdZuname = ssdZuname;
+        this.staKurzbez = staKurzbez;
+        this.staLangbez = staLangbez;
+    }
 
-	public Schueler(int ssdId, Klasse klasse, Ort ort, int ssdAnmeldenr, Date ssdGebdatum, int ssdKatnr, String ssdStr, String ssdVorname, String ssdZuname, String ssdPasswort, String staKurzbez, String staLangbez, String ssdEmail, Date ausgetreten, String ssdGeschlecht, Set<Gruppe> gruppes, Set<Erziehungsberechtigter> erziehungsberechtigters, Set<Mahnung> mahnungs, Set<Pruefung> pruefungs, Set<Semesternote> semesternotes, Set<LaufendeNote> laufendeNotes) {
-		this.ssdId = ssdId;
-		this.klasse = klasse;
-		this.ort = ort;
-		this.ssdAnmeldenr = ssdAnmeldenr;
-		this.ssdGebdatum = ssdGebdatum;
-		this.ssdKatnr = ssdKatnr;
-		this.ssdStr = ssdStr;
-		this.ssdVorname = ssdVorname;
-		this.ssdZuname = ssdZuname;
-		this.ssdPasswort = ssdPasswort;
-		this.staKurzbez = staKurzbez;
-		this.staLangbez = staLangbez;
-		this.ssdEmail = ssdEmail;
-		this.ausgetreten = ausgetreten;
-		this.ssdGeschlecht = ssdGeschlecht;
-		this.gruppen = gruppes;
-		this.erziehungsberechtigte = erziehungsberechtigters;
-		this.mahnungen = mahnungs;
-		this.pruefungen = pruefungs;
-		this.semesternoten = semesternotes;
-		this.laufendeNoten = laufendeNotes;
-	}
+    public Schueler(int ssdId, Klasse klasse, Ort ort, int ssdAnmeldenr, Date ssdGebdatum, int ssdKatnr, String ssdStr, String ssdVorname, String ssdZuname, String ssdPasswort, String staKurzbez, String staLangbez, String ssdEmail, Date ausgetreten, String ssdGeschlecht, Set<Gruppe> gruppes, Set<Erziehungsberechtigter> erziehungsberechtigters, Set<Mahnung> mahnungs, Set<Pruefung> pruefungs, Set<Semesternote> semesternotes, Set<LaufendeNote> laufendeNotes) {
+        this.ssdId = ssdId;
+        this.klasse = klasse;
+        this.ort = ort;
+        this.ssdAnmeldenr = ssdAnmeldenr;
+        this.ssdGebdatum = ssdGebdatum;
+        this.ssdKatnr = ssdKatnr;
+        this.ssdStr = ssdStr;
+        this.ssdVorname = ssdVorname;
+        this.ssdZuname = ssdZuname;
+        this.ssdPasswort = ssdPasswort;
+        this.staKurzbez = staKurzbez;
+        this.staLangbez = staLangbez;
+        this.ssdEmail = ssdEmail;
+        this.ausgetreten = ausgetreten;
+        this.ssdGeschlecht = ssdGeschlecht;
+        this.gruppen = gruppes;
+        this.erziehungsberechtigte = erziehungsberechtigters;
+        this.mahnungen = mahnungs;
+        this.pruefungen = pruefungs;
+        this.semesternoten = semesternotes;
+        this.laufendeNoten = laufendeNotes;
+    }
 
-	@Id
-	@GeneratedValue(generator = "ssd_seq")
-	@Column(name = "ssd_id", unique = true, nullable = false)
-	public int getSsdId() {
-		return this.ssdId;
-	}
+    @Id
+    @GeneratedValue(generator = "ssd_seq")
+    @Column(name = "ssd_id", unique = true, nullable = false)
+    public int getSsdId() {
+        return this.ssdId;
+    }
 
-	public void setSsdId(int ssdId) {
-		this.ssdId = ssdId;
-	}
+    public void setSsdId(int ssdId) {
+        this.ssdId = ssdId;
+    }
 
-	@ManyToOne
-	@JoinColumn(name = "ssd_kla_bez")
-	public Klasse getKlasse() {
-		return this.klasse;
-	}
+    @ManyToOne
+    @JoinColumn(name = "ssd_kla_bez")
+    public Klasse getKlasse() {
+        return this.klasse;
+    }
 
-	public void setKlasse(Klasse klasse) {
-		this.klasse = klasse;
-	}
+    public void setKlasse(Klasse klasse) {
+        this.klasse = klasse;
+    }
 
-	@ManyToOne
-	@JoinColumn(name = "ssd_ort_id", nullable = false)
-	public Ort getOrt() {
-		return this.ort;
-	}
+    @ManyToOne
+    @JoinColumn(name = "ssd_ort_id", nullable = false)
+    public Ort getOrt() {
+        return this.ort;
+    }
 
-	public void setOrt(Ort ort) {
-		this.ort = ort;
-	}
+    public void setOrt(Ort ort) {
+        this.ort = ort;
+    }
 
-	@Column(name = "ssd_anmeldenr", unique = true, nullable = false)
-	public int getSsdAnmeldenr() {
-		return this.ssdAnmeldenr;
-	}
+    @Column(name = "ssd_anmeldenr", unique = true, nullable = false)
+    public int getSsdAnmeldenr() {
+        return this.ssdAnmeldenr;
+    }
 
-	public void setSsdAnmeldenr(int ssdAnmeldenr) {
-		this.ssdAnmeldenr = ssdAnmeldenr;
-	}
+    public void setSsdAnmeldenr(int ssdAnmeldenr) {
+        this.ssdAnmeldenr = ssdAnmeldenr;
+    }
 
-	@Temporal(TemporalType.DATE)
-	@Column(name = "ssd_gebdatum", nullable = false, length = 13)
-	public Date getSsdGebdatum() {
-		return this.ssdGebdatum;
-	}
+    @Temporal(TemporalType.DATE)
+    @Column(name = "ssd_gebdatum", nullable = false, length = 13)
+    public Date getSsdGebdatum() {
+        return this.ssdGebdatum;
+    }
 
-	public void setSsdGebdatum(Date ssdGebdatum) {
-		this.ssdGebdatum = ssdGebdatum;
-		this.setIsVolljaehrig(ssdGebdatum);
-	}
+    public void setSsdGebdatum(Date ssdGebdatum) {
+        this.ssdGebdatum = ssdGebdatum;
+        this.setIsVolljaehrig(ssdGebdatum);
+    }
 
-	@Transient
-	public boolean isIsVolljaehrig() {
-		return isVolljaehrig;
-	}
+    @Transient
+    public boolean isIsVolljaehrig() {
+        return isVolljaehrig;
+    }
 
-	public void setIsVolljaehrig(Date date) {
-		GregorianCalendar gc = new GregorianCalendar();
-		gc.setTime(date);
-		gc.add(GregorianCalendar.YEAR, 18);
-		this.isVolljaehrig = (gc.getTimeInMillis() <= (new Date()).getTime());
-	}
+    public void setIsVolljaehrig(Date date) {
+        GregorianCalendar gc = new GregorianCalendar();
+        gc.setTime(date);
+        gc.add(GregorianCalendar.YEAR, 18);
+        this.isVolljaehrig = (gc.getTimeInMillis() <= (new Date()).getTime());
+    }
 
-	@Column(name = "ssd_katnr", nullable = false)
-	public int getSsdKatnr() {
-		return this.ssdKatnr;
-	}
+    @Column(name = "ssd_katnr", nullable = false)
+    public int getSsdKatnr() {
+        return this.ssdKatnr;
+    }
 
-	public void setSsdKatnr(int ssdKatnr) {
-		this.ssdKatnr = ssdKatnr;
-	}
+    public void setSsdKatnr(int ssdKatnr) {
+        this.ssdKatnr = ssdKatnr;
+    }
 
-	@Column(name = "ssd_str", nullable = false, length = 35)
-	public String getSsdStr() {
-		return this.ssdStr;
-	}
+    @Column(name = "ssd_str", nullable = false, length = 35)
+    public String getSsdStr() {
+        return this.ssdStr;
+    }
 
-	public void setSsdStr(String ssdStr) {
-		this.ssdStr = ssdStr;
-	}
+    public void setSsdStr(String ssdStr) {
+        this.ssdStr = ssdStr;
+    }
 
-	@Column(name = "ssd_vorname", nullable = false, length = 30)
-	public String getSsdVorname() {
-		return this.ssdVorname;
-	}
+    @Column(name = "ssd_vorname", nullable = false, length = 30)
+    public String getSsdVorname() {
+        return this.ssdVorname;
+    }
 
-	public void setSsdVorname(String ssdVorname) {
-		this.ssdVorname = ssdVorname;
-	}
+    public void setSsdVorname(String ssdVorname) {
+        this.ssdVorname = ssdVorname;
+    }
 
-	@Column(name = "ssd_zuname", nullable = false, length = 30)
-	public String getSsdZuname() {
-		return this.ssdZuname;
-	}
+    @Column(name = "ssd_zuname", nullable = false, length = 30)
+    public String getSsdZuname() {
+        return this.ssdZuname;
+    }
 
-	public void setSsdZuname(String ssdZuname) {
-		this.ssdZuname = ssdZuname;
-	}
+    public void setSsdZuname(String ssdZuname) {
+        this.ssdZuname = ssdZuname;
+    }
 
-	@Column(name = "ssd_passwort", length = 15)
-	public String getSsdPasswort() {
-		return this.ssdPasswort;
-	}
+    @Column(name = "ssd_passwort", length = 15)
+    public String getSsdPasswort() {
+        return this.ssdPasswort;
+    }
 
-	public void setSsdPasswort(String ssdPasswort) {
-		this.ssdPasswort = ssdPasswort;
-	}
+    public void setSsdPasswort(String ssdPasswort) {
+        this.ssdPasswort = ssdPasswort;
+    }
 
-	@Column(name = "ssd_sta_kurzbez", nullable = false, length = 3)
-	public String getStaKurzbez() {
-		return this.staKurzbez;
-	}
+    @Column(name = "ssd_sta_kurzbez", nullable = false, length = 3)
+    public String getStaKurzbez() {
+        return this.staKurzbez;
+    }
 
-	public void setStaKurzbez(String staKurzbez) {
-		this.staKurzbez = staKurzbez;
-	}
+    public void setStaKurzbez(String staKurzbez) {
+        this.staKurzbez = staKurzbez;
+    }
 
-	@Column(name = "ssd_sta_langbez", nullable = false, length = 30)
-	public String getStaLangbez() {
-		return this.staLangbez;
-	}
+    @Column(name = "ssd_sta_langbez", nullable = false, length = 30)
+    public String getStaLangbez() {
+        return this.staLangbez;
+    }
 
-	public void setStaLangbez(String staLangbez) {
-		this.staLangbez = staLangbez;
-	}
+    public void setStaLangbez(String staLangbez) {
+        this.staLangbez = staLangbez;
+    }
 
-	@Column(name = "ssd_email", length = 50)
-	public String getSsdEmail() {
-		return this.ssdEmail;
-	}
+    @Column(name = "ssd_email", length = 50)
+    public String getSsdEmail() {
+        return this.ssdEmail;
+    }
 
-	public void setSsdEmail(String ssdEmail) {
-		this.ssdEmail = ssdEmail;
-	}
+    public void setSsdEmail(String ssdEmail) {
+        this.ssdEmail = ssdEmail;
+    }
 
-	@Temporal(TemporalType.DATE)
-	@Column(name = "ssd_ausgetreten", length = 13)
-	public Date getAusgetreten() {
-		return this.ausgetreten;
-	}
+    @Temporal(TemporalType.DATE)
+    @Column(name = "ssd_ausgetreten", length = 13)
+    public Date getAusgetreten() {
+        return this.ausgetreten;
+    }
 
-	public void setAusgetreten(Date ausgetreten) {
-		this.ausgetreten = ausgetreten;
-	}
+    public void setAusgetreten(Date ausgetreten) {
+        this.ausgetreten = ausgetreten;
+    }
 
-	@Column(name = "ssd_geschlecht", length = 1)
-	public String getSsdGeschlecht() {
-		return this.ssdGeschlecht;
-	}
+    @Column(name = "ssd_geschlecht", length = 1)
+    public String getSsdGeschlecht() {
+        return this.ssdGeschlecht;
+    }
 
-	public void setSsdGeschlecht(String ssdGeschlecht) {
-		this.ssdGeschlecht = ssdGeschlecht;
-	}
+    public void setSsdGeschlecht(String ssdGeschlecht) {
+        this.ssdGeschlecht = ssdGeschlecht;
+    }
 
-	@ManyToMany(fetch = FetchType.LAZY, mappedBy = "schueler")
-	public Set<Gruppe> getGruppen() {
-		return this.gruppen;
-	}
+    @ManyToMany(fetch = FetchType.LAZY, mappedBy = "schueler")
+    public Set<Gruppe> getGruppen() {
+        return this.gruppen;
+    }
 
-	public void setGruppen(Set<Gruppe> gruppen) {
-		this.gruppen = gruppen;
-	}
+    public void setGruppen(Set<Gruppe> gruppen) {
+        this.gruppen = gruppen;
+    }
 
-	@OneToMany(fetch = FetchType.LAZY, mappedBy = "schueler")
-	public Set<Erziehungsberechtigter> getErziehungsberechtigte() {
-		return this.erziehungsberechtigte;
-	}
+    @OneToMany(fetch = FetchType.LAZY, mappedBy = "schueler")
+    public Set<Erziehungsberechtigter> getErziehungsberechtigte() {
+        return this.erziehungsberechtigte;
+    }
 
-	public void setErziehungsberechtigte(Set<Erziehungsberechtigter> erziehungsberechtigte) {
-		this.erziehungsberechtigte = erziehungsberechtigte;
-	}
+    public void setErziehungsberechtigte(Set<Erziehungsberechtigter> erziehungsberechtigte) {
+        this.erziehungsberechtigte = erziehungsberechtigte;
+    }
 
-	@OneToMany(fetch = FetchType.LAZY, mappedBy = "schueler")
-	public Set<Mahnung> getMahnungen() {
-		return this.mahnungen;
-	}
+    @OneToMany(fetch = FetchType.LAZY, mappedBy = "schueler")
+    public Set<Mahnung> getMahnungen() {
+        return this.mahnungen;
+    }
 
-	public void setMahnungen(Set<Mahnung> mahnungen) {
-		this.mahnungen = mahnungen;
-	}
+    public void setMahnungen(Set<Mahnung> mahnungen) {
+        this.mahnungen = mahnungen;
+    }
 
-	@OneToMany(fetch = FetchType.LAZY, mappedBy = "schueler")
-	public Set<Pruefung> getPruefungen() {
-		return this.pruefungen;
-	}
+    @OneToMany(fetch = FetchType.LAZY, mappedBy = "schueler")
+    public Set<Pruefung> getPruefungen() {
+        return this.pruefungen;
+    }
 
-	public void setPruefungen(Set<Pruefung> pruefungen) {
-		this.pruefungen = pruefungen;
-	}
+    public void setPruefungen(Set<Pruefung> pruefungen) {
+        this.pruefungen = pruefungen;
+    }
 
-	@OneToMany(fetch = FetchType.LAZY, mappedBy = "schueler")
-	public Set<Semesternote> getSemesternoten() {
-		return this.semesternoten;
-	}
+    @OneToMany(fetch = FetchType.LAZY, mappedBy = "schueler")
+    public Set<Semesternote> getSemesternoten() {
+        return this.semesternoten;
+    }
 
-	public void setSemesternoten(Set<Semesternote> semesternoten) {
-		this.semesternoten = semesternoten;
-	}
+    public void setSemesternoten(Set<Semesternote> semesternoten) {
+        this.semesternoten = semesternoten;
+    }
 
-	@OneToMany(fetch = FetchType.LAZY, mappedBy = "schueler")
-	public Set<LaufendeNote> getLaufendeNoten() {
-		return this.laufendeNoten;
-	}
+    @OneToMany(fetch = FetchType.LAZY, mappedBy = "schueler")
+    public Set<LaufendeNote> getLaufendeNoten() {
+        return this.laufendeNoten;
+    }
 
-	public void setLaufendeNoten(Set<LaufendeNote> laufendeNoten) {
-		this.laufendeNoten = laufendeNoten;
-	}
+    public void setLaufendeNoten(Set<LaufendeNote> laufendeNoten) {
+        this.laufendeNoten = laufendeNoten;
+    }
 
-	@Override
-	public String toString() {
-		if (ssdZuname != null && ssdVorname != null) {
-			return String.format("%s/%02d %s %s", getKlasse().getKlaBez().subSequence(0, 2), getSsdKatnr(), getSsdZuname().toUpperCase(), getSsdVorname());
-		} else {
-			return "";
-		}
-	}
-    
-	public String toString2() {
-		if (ssdZuname != null && ssdVorname != null) {
-			return String.format("%02d %s %s", getSsdKatnr(), getSsdZuname().toUpperCase(), getSsdVorname());
-		} else {
-			return "";
-		}
-	}
+    @Override
+    public String toString() {
+        if (ssdZuname != null && ssdVorname != null) {
+            return String.format("%s/%02d %s %s", getKlasse().getKlaBez().subSequence(0, 2), getSsdKatnr(), getSsdZuname().toUpperCase(), getSsdVorname());
+        } else {
+            return "";
+        }
+    }
 
-	@Override
-	public int hashCode() {
-		int hash = 7;
-		hash = 19 * hash + this.ssdId;
-		return hash;
-	}
+    public String toString2() {
+        if (ssdZuname != null && ssdVorname != null) {
+            return String.format("%02d %s %s", getSsdKatnr(), getSsdZuname().toUpperCase(), getSsdVorname());
+        } else {
+            return "";
+        }
+    }
 
-	@Override
-	public boolean equals(Object obj) {
-		if (this == obj) {
-			return true;
-		}
-		if (obj == null) {
-			return false;
-		}
-		if (getClass() != obj.getClass()) {
-			return false;
-		}
-		final Schueler other = (Schueler) obj;
-		return this.ssdId == other.ssdId;
-	}
+    @Override
+    public int hashCode() {
+        int hash = 7;
+        hash = 19 * hash + this.ssdId;
+        return hash;
+    }
 
-	@Override
-	public int compareTo(Schueler s) {
-		int comp = this.klasse.compareTo(s.klasse);
-		return comp != 0 ? comp : Integer.compare(ssdKatnr, s.ssdKatnr);
-	}
+    @Override
+    public boolean equals(Object obj) {
+        if (this == obj) {
+            return true;
+        }
+        if (obj == null) {
+            return false;
+        }
+        if (getClass() != obj.getClass()) {
+            return false;
+        }
+        final Schueler other = (Schueler) obj;
+        return this.ssdId == other.ssdId;
+    }
+
+    @Override
+    public int compareTo(Schueler s) {
+        int comp = this.klasse.compareTo(s.klasse);
+        return comp != 0 ? comp : Integer.compare(ssdKatnr, s.ssdKatnr);
+    }
+
+    public String userString() {
+        if (ssdZuname != null && ssdVorname != null) {
+            return String.format("%s%02d%s", getKlasse().getKlaBez().toLowerCase(), getSsdKatnr(), getSsdZuname().toLowerCase());
+        } else {
+            return "";
+        }
+    }
 }

@@ -5,7 +5,7 @@
  */
 package at.htlstp.projekt.p04.fxml_controller;
 
-import at.htlstp.projekt.p04.db.DAO;
+import at.htlstp.projekt.p04.db.Hibernate_DAO;
 import at.htlstp.projekt.p04.graphic_tools.Utilities;
 import at.htlstp.projekt.p04.model.Gruppe;
 import at.htlstp.projekt.p04.model.Klasse;
@@ -27,6 +27,7 @@ import javafx.fxml.Initializable;
 import javafx.scene.control.Alert;
 import javafx.scene.control.ButtonType;
 import javafx.scene.control.ListView;
+import javafx.scene.control.TableView;
 import javafx.scene.input.MouseEvent;
 import javafx.stage.Stage;
 import javafx.stage.WindowEvent;
@@ -61,6 +62,10 @@ public class PSSchuelerZuweisungController implements Initializable {
     public void setMenucontroller(PSMenuController menucontroller) {
         this.menucontroller = menucontroller;
     }
+
+  
+    
+    
 
     @Override
     public void initialize(URL url, ResourceBundle rb) {
@@ -106,7 +111,7 @@ public class PSSchuelerZuweisungController implements Initializable {
             Stage myStage = (Stage) lst_schueler.getScene().getWindow();
             myStage.setOnCloseRequest(e -> closeStage(e));
 
-            teilnehmer.addAll(DAO.getDaoInstance().getSchuelerFromPruefung(aktPruefung));
+            teilnehmer.addAll(Hibernate_DAO.getDaoInstance().getSchuelerFromPruefung(aktPruefung));
             gruppen.addAll(menucontroller.getSchuelerInGruppenByLehrer().keySet());
             lst_klassen.getSelectionModel().select(aktPruefung.getKlasse());
 
@@ -177,10 +182,18 @@ public class PSSchuelerZuweisungController implements Initializable {
     @FXML
     private void onActionSpeichern(ActionEvent event) {
         aktPruefung.setSchuelerSet(new HashSet<>(teilnehmer));
-        DAO.getDaoInstance().updatePraktischePruefung(aktPruefung);
+        Hibernate_DAO.getDaoInstance().updatePraktischePruefung(aktPruefung);
         Stage myStage = (Stage) lst_schueler.getScene().getWindow();
         myStage.setOnCloseRequest(null);
         myStage.fireEvent(new WindowEvent(myStage, WindowEvent.WINDOW_CLOSE_REQUEST));   //Stage schließen 
+
+        TableView<PraPruefung> tbl_pruefungen = menucontroller.getTbl_pruefungen(); 
+        
+        PraPruefung selected = tbl_pruefungen.getSelectionModel().getSelectedItem();
+        tbl_pruefungen.getSelectionModel().select(null);
+        tbl_pruefungen.getSelectionModel().select(selected);
+        tbl_pruefungen.refresh();
+
     }
 
     @FXML
@@ -190,7 +203,7 @@ public class PSSchuelerZuweisungController implements Initializable {
     }
 
     public void closeStage(WindowEvent e) {
-        List<Schueler> sortedSchueler = ((ArrayList<Schueler>) DAO.getDaoInstance().getSchuelerFromPruefung(aktPruefung));
+        List<Schueler> sortedSchueler = ((ArrayList<Schueler>) Hibernate_DAO.getDaoInstance().getSchuelerFromPruefung(aktPruefung));
         sortedSchueler.sort((s1, s2) -> Integer.compare(s1.getSsdId(), s2.getSsdId()));
         if (!sortedSchueler.equals(teilnehmer)) {
             //Änderungen

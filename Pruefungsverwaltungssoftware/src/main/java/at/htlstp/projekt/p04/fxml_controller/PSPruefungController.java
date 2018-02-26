@@ -5,7 +5,8 @@
  */
 package at.htlstp.projekt.p04.fxml_controller;
 
-import at.htlstp.projekt.p04.db.DAO;
+import at.htlstp.projekt.p04.db.Hibernate_DAO;
+import at.htlstp.projekt.p04.db.IDAO;
 import at.htlstp.projekt.p04.graphic_tools.Utilities;
 import at.htlstp.projekt.p04.model.Gegenstand;
 import at.htlstp.projekt.p04.model.Klasse;
@@ -15,14 +16,13 @@ import java.io.IOException;
 import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.StandardCopyOption;
 import java.time.DayOfWeek;
 import java.time.LocalDate;
 import java.time.ZoneId;
 import java.util.Date;
 import java.util.Objects;
 import java.util.ResourceBundle;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 import javafx.collections.FXCollections;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
@@ -43,6 +43,7 @@ import javafx.stage.WindowEvent;
  *
  * @author Dru
  */
+//java -jar target/Pruefungsverwaltungssoftware-1.0.jar
 public class PSPruefungController implements Initializable {
 
     @FXML
@@ -80,13 +81,13 @@ public class PSPruefungController implements Initializable {
     public void initialize(URL url, ResourceBundle rb) {
         if (menuController != null) {
             Verwaltungssoftware.disableSaturdaySunday(dpicker_pr_date);
-            DAO instace = DAO.getDaoInstance();
+            IDAO instace = Hibernate_DAO.getDaoInstance();
             lbl_pr_lehrername.setText(menuController.getLehrer().getLehrerVorname() + " " + menuController.getLehrer().getLehrerZuname());
-            chbox_pr_klasse.setItems(FXCollections.observableArrayList(menuController.getSchuelerInKlassenByLehrer().keySet()));
+            chbox_pr_klasse.setItems(FXCollections.observableArrayList(menuController.getSchuelerInKlassenByLehrer().keySet()).sorted());
             chbox_pr_ue.setItems(FXCollections.observableArrayList(Verwaltungssoftware.Unterrichtseinheit.values()));
 
             chbox_pr_klasse.valueProperty().addListener((l, oldV, newV) -> {
-                chbox_pr_gegenstand.setItems(FXCollections.observableArrayList(instace.getGegenstaendeInKlasseByLehrer(menuController.getLehrer(), newV)));
+                chbox_pr_gegenstand.setItems(FXCollections.observableArrayList(instace.getGegenstaendeInKlasseByLehrer(menuController.getLehrer(), newV)).sorted());
                 chbox_pr_gegenstand.getSelectionModel().selectFirst();
             });
 
@@ -158,15 +159,22 @@ public class PSPruefungController implements Initializable {
         Date fromLocal = Date.from(dpicker_pr_date.getValue().atStartOfDay(ZoneId.systemDefault()).toInstant());
         if (pruefung == null) {
             pruefung = getPraPruefungFromScene();
-            DAO.getDaoInstance().persistPraktischePruefung(pruefung);
+            pruefung.setInternet(false);
+            Hibernate_DAO.getDaoInstance().persistPraktischePruefung(pruefung);
             menuController.getTbl_pruefungen().getItems().add(pruefung);
             try {
-                //Neue Ordner anlegen 
-                //TODO: Was passiert wenn diese Ordner bereits existieren?
                 Verwaltungssoftware.createDirectoryForPruefung(pruefung);
-            } catch (IOException ex) {
-                Utilities.showMessageForExceptions(ex, Verwaltungssoftware.schooltoolsLogo(), true);
+                Path skripts = Verwaltungssoftware.SKRIPTS_PATH;
+                Path skript_dest = Verwaltungssoftware.getDirectoryFromPruefung(pruefung).resolve("Skripts");
+                System.out.println("skripts: " + skripts.toString());
+                System.out.println("skript_dest: " + skript_dest.toString());
+                Files.list(skripts)
+                        .forEach(file -> copySkript(skripts.resolve(file).toAbsolutePath(), pruefung));
+
+            } catch (IOException io) {
+                System.out.println(io.getMessage());
             }
+//               
         } else {
             //Prüfung existiert bereits
             Path pruefungsPath = Verwaltungssoftware.getDirectoryFromPruefung(pruefung);
@@ -178,17 +186,16 @@ public class PSPruefungController implements Initializable {
             pruefung.setDatum(fromLocal);
             pruefung.setGegenstand(chbox_pr_gegenstand.getValue());
             pruefung.setKlasse(chbox_pr_klasse.getValue());
-            DAO.getDaoInstance().updatePraktischePruefung(pruefung);
+            Hibernate_DAO.getDaoInstance().updatePraktischePruefung(pruefung);
             menuController.getTbl_pruefungen().refresh();
 
             if (!oldKlasse.equals(pruefung.getKlasse().toString())
                     || !oldname.equals(pruefung.getName())) {
                 try {
-                    //Name oder Klasse haben sich verändert, Verzeichnisname muss angepasst werden
                     Path newDirectory = Verwaltungssoftware.getDirectoryFromPruefung(pruefung);
                     Files.move(pruefungsPath, newDirectory);
                 } catch (IOException ex) {
-                    Logger.getLogger(PSPruefungController.class.getName()).log(Level.SEVERE, null, ex);
+                    Utilities.showMessageForExceptions(ex, Verwaltungssoftware.schooltoolsLogo(), false);
                 }
             }
 
@@ -204,7 +211,8 @@ public class PSPruefungController implements Initializable {
     }
 
     @FXML
-    private void onActionAbbrechen(ActionEvent event) {
+    private void onActionAbbrechen(ActionEvent event
+    ) {
 
         if (pruefung != null) {
             PraPruefung scenePruefung = getPraPruefungFromScene();
@@ -283,8 +291,17 @@ public class PSPruefungController implements Initializable {
         return !date.getDayOfWeek().equals(DayOfWeek.SUNDAY)
                 && !date.getDayOfWeek().equals(DayOfWeek.SATURDAY)
                 && !date.isBefore(LocalDate.now());
-        
+
         //hallo
     }
 
+    private void copySkript(Path toAbsolutePath, PraPruefung pruefung) {
+        Path src = toAbsolutePath;
+        Path dest = Verwaltungssoftware.getDirectoryFromPruefung(pruefung).resolve("skripts").resolve(src.getFileName());
+        try {
+            Files.copy(src, dest, StandardCopyOption.REPLACE_EXISTING);
+        } catch (IOException ex) {
+            Utilities.showMessageForExceptions(ex, Verwaltungssoftware.schooltoolsLogo(), true);
+        }
+    }
 }

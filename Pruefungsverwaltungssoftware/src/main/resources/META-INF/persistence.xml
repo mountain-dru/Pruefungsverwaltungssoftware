@@ -2,9 +2,33 @@
 <persistence version="2.1" xmlns="http://xmlns.jcp.org/xml/ns/persistence" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://xmlns.jcp.org/xml/ns/persistence http://xmlns.jcp.org/xml/ns/persistence/persistence_2_1.xsd">
   <persistence-unit name="VMM_nost_pu" transaction-type="RESOURCE_LOCAL">
     <provider>org.hibernate.ejb.HibernatePersistence</provider>
+    <class>at.htlstp.projekt.p04.model.Berechtigung</class>
+    <class>at.htlstp.projekt.p04.model.Bewertung</class>
+    <class>at.htlstp.projekt.p04.model.Direktionsdaten</class>
+    <class>at.htlstp.projekt.p04.model.Erziehungsberechtigter</class>
+    <class>at.htlstp.projekt.p04.model.Gegenstand</class>
+    <class>at.htlstp.projekt.p04.model.Gesetzkategorie</class>
+    <class>at.htlstp.projekt.p04.model.Gruppe</class>
+    <class>at.htlstp.projekt.p04.model.Kategorie</class>
+    <class>at.htlstp.projekt.p04.model.Klasse</class>
+    <class>at.htlstp.projekt.p04.model.Kompetenzbereich</class>
+    <class>at.htlstp.projekt.p04.model.LaufendeNote</class>
+    <class>at.htlstp.projekt.p04.model.Lehrer</class>
+    <class>at.htlstp.projekt.p04.model.Lehrfach</class>
+    <class>at.htlstp.projekt.p04.model.Mahnung</class>
+    <class>at.htlstp.projekt.p04.model.News</class>
+    <class>at.htlstp.projekt.p04.model.Ort</class>
     <class>at.htlstp.projekt.p04.model.PraPruefung</class>
+    <class>at.htlstp.projekt.p04.model.Pruefung</class>
+    <class>at.htlstp.projekt.p04.model.Schueler</class>
+    <!--Weitere Klassen
+        ...-->
+    <!--...-->
+    <class>at.htlstp.projekt.p04.model.Semesternote</class>
+    <class>at.htlstp.projekt.p04.model.Sprechstunde</class>
+    <class>at.htlstp.projekt.p04.model.Titel</class>
     <properties>
-        <!--<property name="hibernate.hbm2ddl.auto" value="update"/>-->
+      <!--<property name="hibernate.hbm2ddl.auto" value="update"/>-->
       <property name="javax.persistence.jdbc.url" value="jdbc:postgresql://193.170.118.29:54322/vmm_ps_nost"/>
       <property name="javax.persistence.jdbc.user" value="vmm_dev"/>
       <property name="javax.persistence.jdbc.driver" value="org.postgresql.Driver"/>

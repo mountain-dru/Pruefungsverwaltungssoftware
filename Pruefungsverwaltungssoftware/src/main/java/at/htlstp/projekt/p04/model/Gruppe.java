@@ -3,6 +3,7 @@ package at.htlstp.projekt.p04.model;
 
 import java.util.HashSet;
 import java.util.Set;
+import javax.persistence.CascadeType;
 import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.FetchType;
@@ -46,7 +47,8 @@ public class Gruppe implements java.io.Serializable, Comparable<Gruppe> {
 		this.schueler = schuelers;
 		this.berechtigungen = berechtigungs;
 	}
-
+        
+      
 	@Id
 	@GeneratedValue(generator = "grp_seq")
 	@Column(name = "grp_id", unique = true, nullable = false)
@@ -58,7 +60,7 @@ public class Gruppe implements java.io.Serializable, Comparable<Gruppe> {
 		this.grpId = grpId;
 	}
 
-	@ManyToOne
+	@ManyToOne(cascade = {CascadeType.ALL, CascadeType.DETACH})
 	@JoinColumn(name = "grp_geg_kurzbez", nullable = false)
 	public Gegenstand getGegenstand() {
 		return this.gegenstand;
@@ -77,6 +79,7 @@ public class Gruppe implements java.io.Serializable, Comparable<Gruppe> {
 		this.grpName = grpName;
 	}
 
+        
 	@ManyToMany(fetch = FetchType.LAZY)
 	@JoinTable(name = "ssd_mitglied_grp", schema = "public", joinColumns = {
 		@JoinColumn(name = "grp_id", nullable = false, updatable = false)}, inverseJoinColumns = {

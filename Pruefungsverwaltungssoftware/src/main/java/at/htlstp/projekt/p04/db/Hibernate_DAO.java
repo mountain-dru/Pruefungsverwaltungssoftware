@@ -21,17 +21,20 @@ import javax.persistence.TypedQuery;
  *
  * @author Dru
  */
-public class DAO implements IDAO, AutoCloseable {
+public class Hibernate_DAO implements IDAO, AutoCloseable {
 
-    private static DAO daoInstance;
+    private static Hibernate_DAO daoInstance;
 
-    private DAO() {
+    private Hibernate_DAO() {
     }
 
-    public static DAO getDaoInstance() {
+    public static Hibernate_DAO getDaoInstance() {
         if (daoInstance == null) {
-            synchronized (DAO.class) {      //Threadsicher, nur bei der Erzeugung 
-                daoInstance = new DAO();
+            synchronized (Hibernate_DAO.class) {
+                if (daoInstance == null) {
+                    //Threadsicher, nur bei der Erzeugung 
+                    daoInstance = new Hibernate_DAO();
+                }
             }
         }
         return daoInstance;
@@ -41,20 +44,49 @@ public class DAO implements IDAO, AutoCloseable {
     public List<Schueler> getSchuelerByGruppe(Gruppe gruppe) {
         EntityManager em = HibernateJPAUtil.getEntityManagerFactory().createEntityManager();
         try {
-            gruppe = em.find(Gruppe.class, gruppe.getGrpId());
-            if (gruppe != null) {
+            if (gruppe != null
+                    && gruppe.getGrpId() != 0
+                    && em.find(Gruppe.class, gruppe.getGrpId()) != null) {
+
+                gruppe = em.find(Gruppe.class, gruppe.getGrpId());
                 TypedQuery<Schueler> query = em.createQuery("select DISTINCT(sch) from Schueler sch where :ge member of sch.gruppen", Schueler.class)
                         .setParameter("ge", gruppe);
                 return new ArrayList<>(query.getResultList());
+            } else {
+                throw new IllegalArgumentException("Die Übergebene Gruppe ist nicht valid");
             }
-            return new ArrayList<>();
+            
         } finally {
             em.close();
         }
     }
 
     @Override
-    public List<Schueler> getSchuelerByKlasse(Klasse klasse) {
+    public boolean persistPraktischePruefung(PraPruefung pr
+    ) {
+        EntityManager em = HibernateJPAUtil.getEntityManagerFactory().createEntityManager();
+        EntityTransaction tr = em.getTransaction();
+        try {
+            tr.begin();
+            em.persist(pr);
+            tr.commit();
+            return true;
+        } catch (Exception e) {
+            if (tr != null && tr.isActive()) {
+                tr.rollback();
+            }
+            System.out.println(e);
+            return false;
+        } finally {
+
+            em.close();
+        }
+    }
+    //Weitere Methodenimplementierungen
+
+    @Override
+    public List<Schueler> getSchuelerByKlasse(Klasse klasse
+    ) {
         EntityManager em = HibernateJPAUtil.getEntityManagerFactory().createEntityManager();
         try {
             klasse = em.find(Klasse.class, klasse.getKlaBez());
@@ -87,28 +119,8 @@ public class DAO implements IDAO, AutoCloseable {
     }
 
     @Override
-    public boolean persistPraktischePruefung(PraPruefung pr) {
-        EntityManager em = HibernateJPAUtil.getEntityManagerFactory().createEntityManager();
-        EntityTransaction tr = em.getTransaction();
-        try {
-            tr.begin();
-            em.persist(pr);
-            tr.commit();
-            return true;
-        } catch (Exception e) {
-            if (tr != null && tr.isActive()) {
-                tr.rollback();
-            }
-            System.out.println(e);
-            return false;
-        } finally {
-
-            em.close();
-        }
-    }
-
-    @Override
-    public boolean updatePraktischePruefung(PraPruefung pr) {
+    public boolean updatePraktischePruefung(PraPruefung pr
+    ) {
         EntityManager em = HibernateJPAUtil.getEntityManagerFactory().createEntityManager();
         EntityTransaction tr = em.getTransaction();
         try {
@@ -129,7 +141,8 @@ public class DAO implements IDAO, AutoCloseable {
     }
 
     @Override
-    public boolean deletePraktischePruefung(PraPruefung pruefung) {
+    public boolean deletePraktischePruefung(PraPruefung pruefung
+    ) {
         EntityManager em = HibernateJPAUtil.getEntityManagerFactory().createEntityManager();
         EntityTransaction tr = em.getTransaction();
         try {
@@ -149,7 +162,8 @@ public class DAO implements IDAO, AutoCloseable {
     }
 
     @Override
-    public List<PraPruefung> getPreaktischePruefungenByLehrer(Lehrer lehrer) {
+    public List<PraPruefung> getPreaktischePruefungenByLehrer(Lehrer lehrer
+    ) {
         EntityManager em = HibernateJPAUtil.getEntityManagerFactory().createEntityManager();
 
         try {
@@ -182,7 +196,8 @@ public class DAO implements IDAO, AutoCloseable {
     }
 
     @Override
-    public List<Gegenstand> getGegenstaendeInKlasseByLehrer(Lehrer lehrer, Klasse klasse) {
+    public List<Gegenstand> getGegenstaendeInKlasseByLehrer(Lehrer lehrer, Klasse klasse
+    ) {
         EntityManager em = HibernateJPAUtil.getEntityManagerFactory().createEntityManager();
         try {
             lehrer = em.find(Lehrer.class, lehrer.getLehrerKb());

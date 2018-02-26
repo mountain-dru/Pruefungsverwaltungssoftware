@@ -19,7 +19,7 @@
       </Label>
       <Label layoutX="30.0" layoutY="290.0" text="Angabe hinzufügen: " AnchorPane.leftAnchor="30.0" />
       <Button layoutX="160.0" layoutY="286.0" mnemonicParsing="false" onAction="#onActionAbgabeHinzufuegen" prefHeight="25.0" prefWidth="119.0" text="Datei auswählen" AnchorPane.leftAnchor="165.0" />
-      <Label fx:id="lbl_inet_opt" layoutX="30.0" layoutY="343.0" text="Internetoptionen:" />
+      <Label layoutX="30.0" layoutY="343.0" text="Internetoptionen:" />
       <RadioButton fx:id="radio_inet_no" layoutX="160.0" layoutY="343.0" mnemonicParsing="false" text="Internetzugang sperren" AnchorPane.leftAnchor="165.0">
          <toggleGroup>
             <ToggleGroup fx:id="tgroup_inet" />
