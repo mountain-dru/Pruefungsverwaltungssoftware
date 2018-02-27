@@ -50,6 +50,7 @@ import javafx.scene.control.ProgressIndicator;
 import javafx.scene.control.TableColumn;
 import javafx.scene.control.TableView;
 import javafx.stage.Stage;
+import sun.invoke.util.VerifyAccess;
 
 /**
  * FXML Controller class
@@ -233,7 +234,7 @@ public class PSMenuController implements Initializable {
 
             btn_PruefungLoeschen.disableProperty().bind(Bindings.createBooleanBinding(() -> {
                 PraPruefung sel = tbl_pruefungen.getSelectionModel().getSelectedItem();
-                return !(sel != null && !sel.getStatus().equals(Verwaltungssoftware.PR_status.GESTARTET) && pgi_User.getProgress() == 1.0);
+                return !(sel != null && !sel.getStatus().equals(Verwaltungssoftware.PR_status.GESTARTET));
             }, tbl_pruefungen.getSelectionModel().selectedItemProperty(), pgi_User.progressProperty()));
 
             btn_PruefungBeenden.disableProperty().bind(Bindings.createBooleanBinding(() -> {
