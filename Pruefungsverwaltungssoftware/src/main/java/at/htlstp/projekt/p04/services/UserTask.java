@@ -21,16 +21,14 @@ import javafx.concurrent.Task;
  * @author 20120069
  */
 public class UserTask extends Task<Double> {
-
+    
     private double fortschritt;
     private List<Schueler> schueler;
     private PraPruefung pruefung;
-    private Runnable end; 
 
-    public UserTask(List<Schueler> schueler, PraPruefung pr, Runnable end) {
+    public UserTask(List<Schueler> schueler, PraPruefung pr) {
         this.schueler = schueler;
         this.pruefung = pr;
-        this.end = end; 
        }
 
     @Override
@@ -41,7 +39,7 @@ public class UserTask extends Task<Double> {
             Process p = null;
             //p = r.exec("cmd /c Start \"\" /B del " + path2 + "\\activeusers.txt");
             //p.waitFor();
-            double d = 100 / schueler.size();
+            double d = 100.0 / schueler.size();
             try(BufferedReader bf = Files.newBufferedReader(Paths.get(path2.toAbsolutePath().toString(), "activeusers.txt"))){
               String line = null; 
                 while((line = bf.readLine()) != null){
@@ -55,7 +53,7 @@ public class UserTask extends Task<Double> {
             this.updateValue(100.0);
             p.waitFor(5, TimeUnit.SECONDS);
             p.destroy();
-            end.run();
+            updateProgress(1L, 1L);
 
         } catch (Exception e) {
             System.out.println(e.getMessage());

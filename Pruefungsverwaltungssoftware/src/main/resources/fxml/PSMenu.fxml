@@ -97,7 +97,7 @@
                   <Font size="10.0" />
                </font>
             </Button>
-            <Button fx:id="btn_daten" mnemonicParsing="false" onAction="#onSchuelerDaten" prefHeight="23.0" prefWidth="180.0" text="Schülerdaten " GridPane.columnIndex="3">
+            <Button fx:id="btn_SchuelerDaten" mnemonicParsing="false" onAction="#onSchuelerDaten" prefHeight="23.0" prefWidth="180.0" text="Schülerdaten " GridPane.columnIndex="3">
                <font>
                   <Font size="10.0" />
                </font>

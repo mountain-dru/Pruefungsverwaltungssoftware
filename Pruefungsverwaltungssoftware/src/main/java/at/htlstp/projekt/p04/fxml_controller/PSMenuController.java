@@ -59,6 +59,7 @@ import sun.invoke.util.VerifyAccess;
  */
 public class PSMenuController implements Initializable {
 
+    //12 Zeichen Benutzername, 30 Zeichen Mindestzeichen beim Namen
     @FXML
     private Button btn_SchuelerZuweisen;
     @FXML
@@ -104,8 +105,9 @@ public class PSMenuController implements Initializable {
     private Label lbl_User;
     @FXML
     private ProgressIndicator pgi_User;
+
     @FXML
-    private Button btn_daten;
+    private Button btn_SchuelerDaten;
 
     public TableView<PraPruefung> getTbl_pruefungen() {
         return tbl_pruefungen;
@@ -201,19 +203,39 @@ public class PSMenuController implements Initializable {
                 tbl_pruefungen.getSelectionModel().select(null);
             }
 
+            btn_NeuePruefung.disableProperty().bind(tbl_pruefungen.disableProperty());
+
             BooleanBinding anglegtUndSelektiert = Bindings.createBooleanBinding(() -> {
                 PraPruefung sel = tbl_pruefungen.getSelectionModel().getSelectedItem();
-                return !(sel != null && sel.getStatus().equals(Verwaltungssoftware.PR_status.ANGELEGT));
-            }, tbl_pruefungen.getSelectionModel().selectedItemProperty());
+                return !(sel != null
+                        && !tbl_pruefungen.isDisabled()
+                        && sel.getStatus().equals(Verwaltungssoftware.PR_status.ANGELEGT));
+            }, tbl_pruefungen.getSelectionModel().selectedItemProperty(), tbl_pruefungen.disableProperty());
 
             btn_PruefungBearbeiten.disableProperty().bind(anglegtUndSelektiert);
             btn_SchuelerZuweisen.disableProperty().bind(anglegtUndSelektiert);
             btn_AngabenInternet.disableProperty().bind(anglegtUndSelektiert);
 
-            btn_daten.disableProperty().bind(Bindings.createBooleanBinding(() -> {
+            btn_SchuelerDaten.disableProperty().bind(Bindings.createBooleanBinding(() -> {
                 PraPruefung sel = tbl_pruefungen.getSelectionModel().getSelectedItem();
-                return !(sel != null && !sel.getSchuelerSet().isEmpty()
+                return !(sel != null
+                        && !tbl_pruefungen.isDisabled()
+                        && !sel.getSchuelerSet().isEmpty()
                         && !sel.getStatus().equals(Verwaltungssoftware.PR_status.BEENDET));
+            }, tbl_pruefungen.getSelectionModel().selectedItemProperty(), tbl_pruefungen.disabledProperty()));
+
+            btn_SchuelerDaten.textProperty().bind(Bindings.createStringBinding(() -> {
+                PraPruefung sel = tbl_pruefungen.getSelectionModel().getSelectedItem();
+                if (sel == null) {
+                    return "Schülerdaten";
+                } else if (sel.getStatus().equals(Verwaltungssoftware.PR_status.ANGELEGT)) {
+                    return "Schülerdaten erzeugen";
+                } else if (sel.getStatus().equals(Verwaltungssoftware.PR_status.GESTARTET)) {
+                    return "Schülerdaten anzeigen";
+                } else {
+                    return "Schülerdaten";
+                }
+
             }, tbl_pruefungen.getSelectionModel().selectedItemProperty()));
 
             btn_PruefungStarten.disableProperty().bind(Bindings.createBooleanBinding(() -> {
@@ -223,24 +245,31 @@ public class PSMenuController implements Initializable {
                 }
                 Path pathToSchuelerList = Verwaltungssoftware.getDirectoryFromPruefung(sel).resolve("Skripts/activeusers.txt");     //Schuelerdaten müssen bereits angelegt worden sein.
                 return !(pathToSchuelerList.toFile().exists()
+                        && !tbl_pruefungen.isDisabled()
                         && !sel.getSchuelerSet().isEmpty()
                         && sel.getStatus().equals(Verwaltungssoftware.PR_status.ANGELEGT));
-            }, tbl_pruefungen.getSelectionModel().selectedItemProperty()));
+            }, tbl_pruefungen.getSelectionModel().selectedItemProperty(), tbl_pruefungen.disabledProperty()));
 
             btn_VerzKopieren.disableProperty().bind(Bindings.createBooleanBinding(() -> {
                 PraPruefung sel = tbl_pruefungen.getSelectionModel().getSelectedItem();
-                return !(sel != null && sel.getStatus().equals(Verwaltungssoftware.PR_status.GESTARTET));
-            }, tbl_pruefungen.getSelectionModel().selectedItemProperty()));
+                return !(sel != null
+                        && sel.getStatus().equals(Verwaltungssoftware.PR_status.GESTARTET)
+                        && !tbl_pruefungen.isDisabled());
+            }, tbl_pruefungen.getSelectionModel().selectedItemProperty(), tbl_pruefungen.disabledProperty()));
 
             btn_PruefungLoeschen.disableProperty().bind(Bindings.createBooleanBinding(() -> {
                 PraPruefung sel = tbl_pruefungen.getSelectionModel().getSelectedItem();
-                return !(sel != null && !sel.getStatus().equals(Verwaltungssoftware.PR_status.GESTARTET));
-            }, tbl_pruefungen.getSelectionModel().selectedItemProperty(), pgi_User.progressProperty()));
+                return !(sel != null
+                        && !sel.getStatus().equals(Verwaltungssoftware.PR_status.GESTARTET)
+                        && !tbl_pruefungen.isDisabled());
+            }, tbl_pruefungen.getSelectionModel().selectedItemProperty(), tbl_pruefungen.disabledProperty()));
 
             btn_PruefungBeenden.disableProperty().bind(Bindings.createBooleanBinding(() -> {
                 PraPruefung sel = tbl_pruefungen.getSelectionModel().getSelectedItem();
-                return !(sel != null && sel.getStatus().equals(Verwaltungssoftware.PR_status.GESTARTET) && pgi_User.getProgress() == 1.0);       //verzeichnisse kopieren 
-            }, tbl_pruefungen.getSelectionModel().selectedItemProperty(), pgi_User.progressProperty()));
+                return !(sel != null
+                        && sel.getStatus().equals(Verwaltungssoftware.PR_status.GESTARTET)
+                        && !tbl_pruefungen.isDisabled());
+            }, tbl_pruefungen.getSelectionModel().selectedItemProperty(), tbl_pruefungen.disabledProperty()));
 
         }
     }
@@ -321,26 +350,9 @@ public class PSMenuController implements Initializable {
         if (!checkIfSelected("Meldung", "Sie müssen eine Zeile in der Tabelle  selektieren, um eine Prüfung zu starten")) {
             return;
         }
-
-//         Path userPruefer = Paths.get(Verwaltungssoftware.getDirectoryFromPruefung(aktPruefung).toAbsolutePath().toString(), "user.txt");
-//        
-//        if(Files.exists(userPruefer)){
-//            System.out.println("gibts");
-//        }else{
-//            System.out.println("gibts nd ");
-//        }
-        
-       
         tbl_pruefungen.disableProperty().set(true);
-        Runnable run = () -> {
-            aktPruefung.setStatus(Verwaltungssoftware.PR_status.GESTARTET);
-            tbl_pruefungen.disableProperty().set(false);
-            tbl_pruefungen.getSelectionModel().select(null);
-            tbl_pruefungen.getSelectionModel().select(aktPruefung);
-            tbl_pruefungen.refresh();
-        };
 
-        UserTask task = new UserTask(Hibernate_DAO.getDaoInstance().getSchuelerFromPruefung(aktPruefung), aktPruefung, run);
+        UserTask task = new UserTask(Hibernate_DAO.getDaoInstance().getSchuelerFromPruefung(aktPruefung), aktPruefung);
         Thread t = new Thread(task);
         task.valueProperty().addListener((o, oldV, newV) -> {
             if (newV != null) {
@@ -350,6 +362,15 @@ public class PSMenuController implements Initializable {
 
         });
         lbl_User.setText("Usererstellung: ");
+        task.progressProperty().addListener((on, oldV, newV) -> {
+            if ((double) newV == 1L) {
+                aktPruefung.setStatus(Verwaltungssoftware.PR_status.GESTARTET);
+                tbl_pruefungen.disableProperty().set(false);
+                tbl_pruefungen.getSelectionModel().select(null);
+                tbl_pruefungen.getSelectionModel().select(aktPruefung);
+                tbl_pruefungen.refresh();
+            }
+        });
         t.start();
 
         Hibernate_DAO.getDaoInstance().updatePraktischePruefung(aktPruefung);
@@ -363,14 +384,8 @@ public class PSMenuController implements Initializable {
             return;
         }
         tbl_pruefungen.disableProperty().set(true);
-        Runnable run = () -> {
-            aktPruefung.setStatus(Verwaltungssoftware.PR_status.BEENDET);
-            tbl_pruefungen.disableProperty().set(false);
-            tbl_pruefungen.getSelectionModel().select(null);
-            tbl_pruefungen.getSelectionModel().select(aktPruefung);
-            tbl_pruefungen.refresh();
-        };
-        UserDelTask task = new UserDelTask(Hibernate_DAO.getDaoInstance().getSchuelerFromPruefung(aktPruefung), aktPruefung, run);
+
+        UserDelTask task = new UserDelTask(Hibernate_DAO.getDaoInstance().getSchuelerFromPruefung(aktPruefung), aktPruefung);
         Thread t = new Thread(task);
         task.valueProperty().addListener((o, oldV, newV) -> {
             if (newV != null) {
@@ -380,7 +395,17 @@ public class PSMenuController implements Initializable {
 
         });
         lbl_User.setText("Userentfernung: ");
+        task.progressProperty().addListener((on, oldV, newV) -> {
+            if ((double) newV == 1L) {
+                aktPruefung.setStatus(Verwaltungssoftware.PR_status.BEENDET);
+                tbl_pruefungen.disableProperty().set(false);
+                tbl_pruefungen.getSelectionModel().select(null);
+                tbl_pruefungen.getSelectionModel().select(aktPruefung);
+                tbl_pruefungen.refresh();
+            }
+        });
         t.start();
+
         Hibernate_DAO.getDaoInstance().updatePraktischePruefung(aktPruefung);
 
     }
@@ -455,8 +480,8 @@ public class PSMenuController implements Initializable {
         }
         Path userFile = Verwaltungssoftware.getDirectoryFromPruefung(aktPruefung).resolve(Paths.get("Skripts/activeusers.txt"));
         Path userPruefer = Paths.get(Verwaltungssoftware.getDirectoryFromPruefung(aktPruefung).toAbsolutePath().toString(), "user.txt");
-        
-        if(aktPruefung.getStatus().equals(Verwaltungssoftware.PR_status.GESTARTET)){
+
+        if (aktPruefung.getStatus().equals(Verwaltungssoftware.PR_status.GESTARTET)) {
             try {
                 Desktop.getDesktop().open(userPruefer.toFile());
             } catch (IOException ex) {
@@ -471,30 +496,18 @@ public class PSMenuController implements Initializable {
 //            p.waitFor();
         List<Schueler> schuelerList = Hibernate_DAO.getDaoInstance().getSchuelerFromPruefung(aktPruefung);
         schuelerList.sort((s1, s2) -> Integer.compare(s1.getSsdKatnr(), s2.getSsdKatnr()));
-//            for (Schueler sch : schuelerList) {
-//                p = r.exec("cmd /c Start \"\" /B " + skripts + "\\generateuserdata.bat X" + sch.userString());
-//                Thread.sleep(100);
-//            }
-//            p.waitFor();
-
-//        UserTask task = new UserTask(Hibernate_DAO.getDaoInstance().getSchuelerFromPruefung(aktPruefung), aktPruefung);
-//        Thread t = new Thread(task);
-//        task.valueProperty().addListener((o, oldV, newV) -> {
-//            if (newV != null) {
-//                pgi_User.setProgress(newV / 100.0);
-//                System.out.println("UPDATE");
-//            }
-//
-//        });
-//       t.start();
+        int longestName = schuelerList.stream().mapToInt(sch -> sch.getSsdZuname().length()).max().getAsInt();
+        int maxUsernameLength = 10; 
+        int lineLength = 58; 
+        
         
         try (BufferedWriter bw_user = Files.newBufferedWriter(userFile);
                 BufferedWriter bw_pruefer = Files.newBufferedWriter(userPruefer)) {
             String line = null;
             String user = null, passwd = null;
-            bw_pruefer.write(String.format("|KNR |Klasse | %-30s | %-25s | %8s |", "Vorname/Nachname", "Benutzername", "Passwort"));
+            bw_pruefer.write(String.format("|KNR |Klasse | %-17s | %-12s | %8s |", "Vorname/Nachname", "Benutzername", "Passwort"));
             bw_pruefer.newLine();
-            for (int i = 0; i < 86; i++) {
+            for (int i = 0; i < (2 + lineLength); i++) {
                 bw_pruefer.write("-");
             }
             bw_pruefer.newLine();
@@ -502,7 +515,7 @@ public class PSMenuController implements Initializable {
             Random rd = new Random();
             for (Schueler sch : schuelerList) {
                 bw_pruefer.write("|");
-                for (int i = 0; i < 84; i++) {
+                for (int i = 0; i < lineLength; i++) {
                     bw_pruefer.write(" ");
                 }
                 bw_pruefer.write("|");
@@ -516,22 +529,27 @@ public class PSMenuController implements Initializable {
 
                 bw_user.write(user + ";" + passwd);
                 bw_user.newLine();
-                String newLine = String.format("| %02d   %5s   %-30s   %-25s   %8s |",
+                String newLine = String.format("| %02d   %5s   %-" + (longestName >= 17? longestName: 17) + "s   %-" + (maxUsernameLength >= 12? maxUsernameLength: 12)  + "s   %8s |",
                         sch.getSsdKatnr(),
                         sch.getKlasse().getKlaBez(),
-                        sch.getSsdVorname() + " " + sch.getSsdZuname(),
-                        user,
+                        sch.getSsdZuname(),
+                        user.length()> maxUsernameLength? user.substring(0, maxUsernameLength): user,
                         passwd.trim());
                 bw_pruefer.write(newLine);
                 bw_pruefer.newLine();
                 bw_pruefer.write("|");
-                for (int i = 0; i < 84; i++) {
+                for (int i = 0; i < 14; i++) {
+                    bw_pruefer.write(" ");
+                }
+                String vorname = sch.getSsdVorname(); 
+                bw_pruefer.write(vorname);
+                for (int i = 0; i < lineLength - 14 - vorname.length(); i++) {
                     bw_pruefer.write(" ");
                 }
                 bw_pruefer.write("|");
                 bw_pruefer.newLine();
 
-                for (int i = 0; i < 86; i++) {
+                for (int i = 0; i < (lineLength + 2); i++) {
                     bw_pruefer.write("-");
                 }
                 bw_pruefer.newLine();

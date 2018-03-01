@@ -24,12 +24,10 @@ public class UserDelTask extends Task<Double> {
     private double fortschritt;
     private List<Schueler> schueler;
     private PraPruefung pruefung;
-    private Runnable end;
 
-    public UserDelTask(List<Schueler> schueler, PraPruefung pr, Runnable end) {
+    public UserDelTask(List<Schueler> schueler, PraPruefung pr) {
         this.schueler = schueler;
         this.pruefung = pr;
-        this.end = end;
     }
 
     @Override
@@ -38,7 +36,7 @@ public class UserDelTask extends Task<Double> {
 
             Runtime r = Runtime.getRuntime();
             Process p2 = null;
-            double d = 100 / schueler.size();
+            double d = 100.0 / schueler.size();
             Path skriptsPath = Verwaltungssoftware.getDirectoryFromPruefung(pruefung).resolve("Skripts");
             for (Schueler s : Hibernate_DAO.getDaoInstance().getSchuelerFromPruefung(pruefung)) {
                 p2 = r.exec("cmd /c Start \"\" /B " + skriptsPath.toAbsolutePath().toString() + "\\endscript.bat X" + s.userString());      //Process p = r.exec("cmd /c start "+path+"\\test1234.bat"); öffnet neue cmd und gibt output aus
@@ -52,7 +50,8 @@ public class UserDelTask extends Task<Double> {
             p2.destroy();
             p2 = r.exec("cmd /c Start \"\" /B del " + skriptsPath + "\\activeusers.txt");
             p2.destroy();
-            this.end.run();
+            updateProgress(1L, 1L);
+            
         } catch (IOException | InterruptedException ex) {
             Utilities.showMessageForExceptions(ex, Verwaltungssoftware.schooltoolsLogo(), false);
         }
