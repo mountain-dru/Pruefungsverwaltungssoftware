@@ -17,14 +17,22 @@ import at.htlstp.projekt.p04.model.Schueler;
 import at.htlstp.projekt.p04.pruefungsverwaltungssoftware.Verwaltungssoftware;
 import at.htlstp.projekt.p04.services.UserDelTask;
 import at.htlstp.projekt.p04.services.UserTask;
+import client.ConnectionParameter;
 import java.awt.Desktop;
+import java.io.BufferedReader;
 import java.io.BufferedWriter;
-import java.io.File;
+import java.io.FileReader;
 import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
+import java.net.InetAddress;
+import java.net.Socket;
 import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -39,6 +47,7 @@ import javafx.beans.property.SimpleObjectProperty;
 import javafx.beans.property.SimpleStringProperty;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
+import javafx.concurrent.Task;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
@@ -50,7 +59,6 @@ import javafx.scene.control.ProgressIndicator;
 import javafx.scene.control.TableColumn;
 import javafx.scene.control.TableView;
 import javafx.stage.Stage;
-import sun.invoke.util.VerifyAccess;
 
 /**
  * FXML Controller class
@@ -362,13 +370,89 @@ public class PSMenuController implements Initializable {
 
         });
         lbl_User.setText("Usererstellung: ");
+        ;
+
         task.progressProperty().addListener((on, oldV, newV) -> {
             if ((double) newV == 1L) {
-                aktPruefung.setStatus(Verwaltungssoftware.PR_status.GESTARTET);
-                tbl_pruefungen.disableProperty().set(false);
-                tbl_pruefungen.getSelectionModel().select(null);
-                tbl_pruefungen.getSelectionModel().select(aktPruefung);
-                tbl_pruefungen.refresh();
+                if (aktPruefung.getInternet()) {
+                    Task<Void> internet = new Task<Void>() {
+                        @Override
+                        protected Void call() throws Exception {
+                            this.updateProgress(0.5, 1.0);
+                            Path userFile = Verwaltungssoftware.getDirectoryFromPruefung(aktPruefung).resolve(Paths.get("Skripts/activeusers.txt"));
+
+                            try (Socket sock = new Socket(InetAddress.getByName("10.138.138.138"), 42000);
+                                    ObjectInputStream socketIn = new ObjectInputStream(sock.getInputStream());
+                                    ObjectOutputStream socketOut = new ObjectOutputStream(sock.getOutputStream());
+                                    BufferedReader bf = new BufferedReader(new FileReader(userFile.toFile()))) {
+
+                                socketOut.writeObject(ConnectionParameter.UNLOCK_INTERNET);
+                                Map<String, String> userMap = new HashMap<>();
+                                String line = null;
+                                while ((line = bf.readLine()) != null) {
+                                    userMap.put(line.split(";")[0], line.split(";")[1]);
+                                }
+
+                                socketOut.writeObject(userMap);
+                                socketOut.writeObject(new ArrayList(Arrays.asList("docs.oracle.com", "www.primefaces.org")));
+                                socketOut.writeObject(aktPruefung.getName());
+                                ConnectionParameter response = (ConnectionParameter) socketIn.readObject();
+
+                                if (response.equals(ConnectionParameter.SUCCEDDED)) {
+                                    this.updateProgress(1.0, 1.0);
+
+                                } else {
+                                    this.updateProgress(0.9, 1.0);
+
+                                }
+                            } catch (IOException io) {
+                                Utilities.showMessageForExceptions(io, Verwaltungssoftware.schooltoolsLogo(), false);
+                            }
+                            this.updateProgress(1.0, 1.0);
+                            return null;
+                        }
+                    };
+                    Thread proxy = new Thread(internet);
+                    internet.progressProperty().addListener((o, oldVa, newVa) -> {
+                        double value = (double) newVa;
+                        if (value == 1.0) {
+                            Utilities.showMessageWithFixedWidth("Information",
+                                    "Initialisierung abgeschlossen",
+                                    "Interzugriff wurde vollständig eingerichtet",
+                                    Alert.AlertType.INFORMATION, Verwaltungssoftware.schooltoolsLogo(),
+                                    Verwaltungssoftware.INFORMATION_MESSAGE_WIDTH,
+                                    false);
+                            aktPruefung.setStatus(Verwaltungssoftware.PR_status.GESTARTET);
+                            tbl_pruefungen.disableProperty().set(false);
+                            tbl_pruefungen.getSelectionModel().select(null);
+                            tbl_pruefungen.getSelectionModel().select(aktPruefung);
+                            tbl_pruefungen.refresh();
+                        } else if (value == 0.5) {
+                            Utilities.showMessageWithFixedWidth("Information",
+                                    "Initialisierung des Internets",
+                                    "Der Vorgang wird etwa 30 Sekunden beanspruchen",
+                                    Alert.AlertType.INFORMATION, Verwaltungssoftware.schooltoolsLogo(),
+                                    Verwaltungssoftware.INFORMATION_MESSAGE_WIDTH,
+                                    false);
+                        } else if (value == 0.9) {
+                            Utilities.showMessageWithFixedWidth("Fehler",
+                                    "Initialisierung abgebrochen",
+                                    "Der Internetzugriff konnte nicht eingerichtet werden",
+                                    Alert.AlertType.ERROR, Verwaltungssoftware.schooltoolsLogo(),
+                                    Verwaltungssoftware.INFORMATION_MESSAGE_WIDTH,
+                                    false);
+                        }
+                    });
+                    proxy.start();
+
+                } else {
+                    aktPruefung.setStatus(Verwaltungssoftware.PR_status.GESTARTET);
+                    tbl_pruefungen.disableProperty().set(false);
+                    tbl_pruefungen.getSelectionModel().select(null);
+                    tbl_pruefungen.getSelectionModel().select(aktPruefung);
+                    tbl_pruefungen.refresh();
+
+                }
             }
         });
         t.start();
@@ -397,11 +481,54 @@ public class PSMenuController implements Initializable {
         lbl_User.setText("Userentfernung: ");
         task.progressProperty().addListener((on, oldV, newV) -> {
             if ((double) newV == 1L) {
-                aktPruefung.setStatus(Verwaltungssoftware.PR_status.BEENDET);
-                tbl_pruefungen.disableProperty().set(false);
-                tbl_pruefungen.getSelectionModel().select(null);
-                tbl_pruefungen.getSelectionModel().select(aktPruefung);
-                tbl_pruefungen.refresh();
+                if (aktPruefung.getInternet()) {
+                    Task<Void> internet = new Task<Void>() {
+                        @Override
+                        protected Void call() throws Exception {
+
+                            Path userFile = Verwaltungssoftware.getDirectoryFromPruefung(aktPruefung).resolve(Paths.get("Skripts/activeusers.txt"));
+                            try (Socket sock = new Socket(InetAddress.getByName("10.138.138.138"), 42000);
+                                    ObjectInputStream socketIn = new ObjectInputStream(sock.getInputStream());
+                                    ObjectOutputStream socketOut = new ObjectOutputStream(sock.getOutputStream());
+                                    BufferedReader bf = Files.newBufferedReader(userFile)) {
+
+                                socketOut.writeObject(ConnectionParameter.END_EXAM);
+                                List<String> schueler = new ArrayList<>();
+                                String line = null;
+                                while ((line = bf.readLine()) != null) {
+                                    schueler.add(line.split(";")[0]);
+                                }
+
+                                socketOut.writeObject(schueler);
+                                socketOut.writeObject(aktPruefung.getName());
+                                System.out.println("Wait for response");
+                                System.out.println(socketIn.readObject());
+                            } catch (IOException io) {
+                                Utilities.showMessageForExceptions(io, Verwaltungssoftware.schooltoolsLogo(), false);
+                            }
+                            this.updateProgress(1.0, 1.0);
+                            return null;
+                        }
+                    };
+                    Thread proxy = new Thread(internet);
+                    internet.progressProperty().addListener((o, oldVa, newVa) -> {
+                        if ((double) newVa == 1.0) {
+                            aktPruefung.setStatus(Verwaltungssoftware.PR_status.BEENDET);
+                            tbl_pruefungen.disableProperty().set(false);
+                            tbl_pruefungen.getSelectionModel().select(null);
+                            tbl_pruefungen.getSelectionModel().select(aktPruefung);
+                            tbl_pruefungen.refresh();
+                        }
+                    });
+                    proxy.start();
+
+                } else {
+                    aktPruefung.setStatus(Verwaltungssoftware.PR_status.BEENDET);
+                    tbl_pruefungen.disableProperty().set(false);
+                    tbl_pruefungen.getSelectionModel().select(null);
+                    tbl_pruefungen.getSelectionModel().select(aktPruefung);
+                    tbl_pruefungen.refresh();
+                }
             }
         });
         t.start();
@@ -497,10 +624,9 @@ public class PSMenuController implements Initializable {
         List<Schueler> schuelerList = Hibernate_DAO.getDaoInstance().getSchuelerFromPruefung(aktPruefung);
         schuelerList.sort((s1, s2) -> Integer.compare(s1.getSsdKatnr(), s2.getSsdKatnr()));
         int longestName = schuelerList.stream().mapToInt(sch -> sch.getSsdZuname().length()).max().getAsInt();
-        int maxUsernameLength = 10; 
-        int lineLength = 58; 
-        
-        
+        int maxUsernameLength = 10;
+        int lineLength = 58;
+
         try (BufferedWriter bw_user = Files.newBufferedWriter(userFile);
                 BufferedWriter bw_pruefer = Files.newBufferedWriter(userPruefer)) {
             String line = null;
@@ -527,13 +653,14 @@ public class PSMenuController implements Initializable {
                     passwd += (char) (97 + (rd.nextInt(26)));
                 }
 
-                bw_user.write(user + ";" + passwd);
+                bw_user.write(user.length() > maxUsernameLength ? user.substring(0, maxUsernameLength) : user);
+                bw_user.write(";" + passwd);
                 bw_user.newLine();
-                String newLine = String.format("| %02d   %5s   %-" + (longestName >= 17? longestName: 17) + "s   %-" + (maxUsernameLength >= 12? maxUsernameLength: 12)  + "s   %8s |",
+                String newLine = String.format("| %02d   %5s   %-" + (longestName >= 17 ? longestName : 17) + "s   %-" + (maxUsernameLength >= 12 ? maxUsernameLength : 12) + "s   %8s |",
                         sch.getSsdKatnr(),
                         sch.getKlasse().getKlaBez(),
                         sch.getSsdZuname(),
-                        user.length()> maxUsernameLength? user.substring(0, maxUsernameLength): user,
+                        user.length() > maxUsernameLength ? user.substring(0, maxUsernameLength) : user,
                         passwd.trim());
                 bw_pruefer.write(newLine);
                 bw_pruefer.newLine();
@@ -541,7 +668,7 @@ public class PSMenuController implements Initializable {
                 for (int i = 0; i < 14; i++) {
                     bw_pruefer.write(" ");
                 }
-                String vorname = sch.getSsdVorname(); 
+                String vorname = sch.getSsdVorname();
                 bw_pruefer.write(vorname);
                 for (int i = 0; i < lineLength - 14 - vorname.length(); i++) {
                     bw_pruefer.write(" ");
