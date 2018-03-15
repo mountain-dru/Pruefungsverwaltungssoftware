@@ -38,7 +38,7 @@ public class Lehrer_Generator {
         try (BufferedWriter writer = Files.newBufferedWriter(p)) {
             for (Lehrer l : list) {
                 //Kürzel, vorname, nachname 
-                writer.write(l.getLehrerKb() + ";" + l.getLehrerVorname() + ";" + l.getLehrerZuname());
+                writer.write(l.getTitel().getTitBez() + " " + l.getLehrerVorname() + " " + l.getLehrerZuname());
                 writer.newLine();
             }
 

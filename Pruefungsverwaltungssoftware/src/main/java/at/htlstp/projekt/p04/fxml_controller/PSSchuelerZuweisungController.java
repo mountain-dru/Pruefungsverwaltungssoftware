@@ -72,8 +72,8 @@ public class PSSchuelerZuweisungController implements Initializable {
         if (menucontroller != null) {
             aktPruefung = menucontroller.getTbl_pruefungen().getSelectionModel().getSelectedItem();
 
-            lst_gruppen.setItems(gruppen);
-            lst_klassen.setItems(klassen);
+            lst_gruppen.setItems(gruppen.sorted());
+            lst_klassen.setItems(klassen.sorted());
 
             Comparator<Schueler> schuelerComparator = (s1, s2) -> {
                 int diff = s1.getKlasse().compareTo(s2.getKlasse());

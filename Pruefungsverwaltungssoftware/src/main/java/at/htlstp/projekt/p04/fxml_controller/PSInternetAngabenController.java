@@ -9,8 +9,12 @@ import at.htlstp.projekt.p04.db.Hibernate_DAO;
 import at.htlstp.projekt.p04.graphic_tools.Utilities;
 import at.htlstp.projekt.p04.model.PraPruefung;
 import at.htlstp.projekt.p04.pruefungsverwaltungssoftware.Verwaltungssoftware;
+import at.htlstp.projekt.p04.services.FileWatcher;
 import com.sun.javafx.scene.control.skin.DatePickerSkin;
+import java.io.BufferedReader;
+import java.io.BufferedWriter;
 import java.io.File;
+import java.io.FileWriter;
 import java.io.IOException;
 import java.net.URL;
 import java.nio.file.FileAlreadyExistsException;
@@ -25,6 +29,7 @@ import java.util.ResourceBundle;
 import java.util.stream.Collectors;
 import javafx.beans.binding.Bindings;
 import javafx.collections.FXCollections;
+import javafx.collections.ListChangeListener;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
@@ -36,8 +41,8 @@ import javafx.scene.control.DatePicker;
 import javafx.scene.control.Label;
 import javafx.scene.control.ListView;
 import javafx.scene.control.RadioButton;
+import javafx.scene.control.TextField;
 import javafx.scene.control.ToggleGroup;
-import javafx.scene.control.Tooltip;
 import javafx.scene.control.TreeItem;
 import javafx.scene.control.TreeView;
 import javafx.scene.image.Image;
@@ -80,6 +85,18 @@ public class PSInternetAngabenController implements Initializable {
     private Button btn_info_angaben;
     @FXML
     private ListView<String> lst_angaben;
+    @FXML
+    private ListView<String> lst_websites;
+    @FXML
+    private TextField fld_newWebsite;
+    @FXML
+    private Button btn_newWebsite;
+    @FXML
+    private Button btn_websiteInfo;
+    @FXML
+    private Button btn_refresh;
+    @FXML
+    private AnchorPane pane_Inet;
 
     public void setMenucontroller(PSMenuController menucontroller) {
         this.menucontroller = menucontroller;
@@ -151,25 +168,43 @@ public class PSInternetAngabenController implements Initializable {
             lbl_ur.setText(aktPruefung.getUnterrichtsstunde().toString());
 
             ImageView btnImage = new ImageView(this.getClass().getResource("/images/info.png").toString());
+            ImageView btnImage_copy = new ImageView(this.getClass().getResource("/images/info.png").toString());
+            ImageView refreshImage = new ImageView(this.getClass().getResource("/images/refresh.png").toString());
             btnImage.setFitWidth(18.0);
             btnImage.setFitHeight(18.0);
-            btn_info_angaben.setGraphic(btnImage);
+            btnImage_copy.setFitWidth(18.0);
+            btnImage_copy.setFitHeight(18.0);
+            refreshImage.setFitWidth(18.0);
+            refreshImage.setFitHeight(18.0);
 
+            btn_info_angaben.setGraphic(btnImage);
+            btn_websiteInfo.setGraphic(btnImage_copy);
+            btn_refresh.setGraphic(refreshImage);
             //Internetoption
             radio_inet_yes.selectedProperty().addListener((d, oldV, newV) -> {
-                aktPruefung.setInternet(newV == true);
+                if (newV) {
+                    onActionRefresh(null);
+                } else {
+                    lst_websites.getItems().clear();
+                    fld_newWebsite.setText(null);
+                }
+                aktPruefung.setInternet(newV);
                 aktTreeItem.setGraphic(getYesNoImageView(newV));
                 allPruefungen.forEach(pr -> {
-                   if (pr.getId().equals(aktPruefung.getId())){
-                       pr.setInternet(aktPruefung.getInternet());   //Internetoption auch in der TreeView Liste updaten
-                   }
-                }); 
+                    if (pr.getId().equals(aktPruefung.getId())) {
+                        pr.setInternet(aktPruefung.getInternet());   //Internetoption auch in der TreeView Liste updaten
+                    }
+                });
             });
+            lst_websites.setItems(FXCollections.observableArrayList());
+            pane_Inet.disableProperty().bind(Bindings.createBooleanBinding(() -> !radio_inet_yes.isSelected(), radio_inet_yes.selectedProperty()));
             if (aktPruefung.getInternet()) {
                 radio_inet_yes.selectedProperty().set(true);
+
             } else {
                 radio_inet_no.selectedProperty().set(true);
             }
+           
 
             //Angaben
             Path angabenPath = Verwaltungssoftware.getDirectoryFromPruefung(aktPruefung).resolve("Angaben");
@@ -179,6 +214,7 @@ public class PSInternetAngabenController implements Initializable {
             lst_angaben.itemsProperty().bind(fw.valueProperty());
             Thread start = new Thread(fw);
             start.start();
+
             Stage myStage = (Stage) btn_info_angaben.getScene().getWindow();
             myStage.setOnCloseRequest(e -> onActionClose(e));
             trview_ue.showRootProperty().set(false);
@@ -250,6 +286,75 @@ public class PSInternetAngabenController implements Initializable {
     private void onActionClose(WindowEvent e) {
         fw.stopWatcher();
         Hibernate_DAO.getDaoInstance().updatePraktischePruefung(aktPruefung);
+    }
+
+    @FXML
+    private void onActionWebsitesInfo(ActionEvent event) {
+        Utilities.showMessageWithFixedWidth("Info",
+                "Websites freigeben",
+                "In dieser Liste werden alle Einträge der Datei \"websites.txt\" aus dem Prüfugnsverzeichnis "
+                + "abgebildet. Sie können die Datei manuell verändern und in jede Zeile den Namen einer Internetseite eintragen oder das Textfeld nutzen, um neue"
+                + "Websites hinzuzufügen (zB. www.primefaces.org). Wenn Sie die Datei ändern, sollten Sie die Liste mithilfe des Refresh-Buttons aktualisieren",
+                Alert.AlertType.INFORMATION,
+                Verwaltungssoftware.schooltoolsLogo(),
+                Verwaltungssoftware.INFORMATION_MESSAGE_WIDTH,
+                false);
+    }
+
+    @FXML
+    private void onActionRefresh(ActionEvent event) {
+        Path websites = Verwaltungssoftware.getDirectoryFromPruefung(aktPruefung).resolve("websites.txt");
+        List<String> websitesList = new ArrayList<>();
+        if (websites.toFile().exists()) {
+            try (BufferedReader bf = Files.newBufferedReader(websites)) {
+                String website = null;
+                while ((website = bf.readLine()) != null) {
+                    websitesList.add(website.split("\\s")[0]);
+                }
+            } catch (IOException io) {
+                Utilities.showMessageForExceptions(io, Verwaltungssoftware.schooltoolsLogo(), false);
+            }
+            lst_websites.getItems().clear();
+            lst_websites.getItems().addAll(websitesList);
+        } else {
+            try {
+                Files.createFile(websites);
+            } catch (IOException ex) {
+                Utilities.showMessageWithFixedWidth("Fehler", "Problem beim Anlegen einer Datei.", "Die Datei \"webistes.txt\" konnte im Prüfungsordner nicht angelegt werden. "
+                        + "Versichern Sie sich, dass der Prüfungsordner existiert. ",
+                        Alert.AlertType.ERROR,
+                        Verwaltungssoftware.schooltoolsLogo(),
+                        Verwaltungssoftware.INFORMATION_MESSAGE_WIDTH,
+                        false);
+            }
+        }
+
+    }
+
+    @FXML
+    private void onActionAddWebsite(ActionEvent event) {
+        String name = fld_newWebsite.getText();
+        if (name != null && !name.isEmpty()) {
+            lst_websites.getItems().add(name);
+            Path websites = Verwaltungssoftware.getDirectoryFromPruefung(aktPruefung).resolve("websites.txt");
+            try {
+                if (!websites.toFile().exists()) {
+                    Files.createFile(websites);
+                }
+                try (BufferedWriter bw = new BufferedWriter(new FileWriter(websites.toFile(), true))) {
+                    bw.write(name);
+                    bw.newLine();
+                }
+            } catch (IOException io) {
+                Utilities.showMessageWithFixedWidth("Fehler", "Problem beim Schreiben in eine Datei.", "Die Datei \"webistes.txt\" konnte im Prüfungsordner nicht überschrieben werden. "
+                        + "Versichern Sie sich, dass der Prüfungsordner und die Datei existieren.",
+                        Alert.AlertType.ERROR,
+                        Verwaltungssoftware.schooltoolsLogo(),
+                        Verwaltungssoftware.INFORMATION_MESSAGE_WIDTH,
+                        false);
+            }
+            fld_newWebsite.setText(null);
+        }
     }
 
 }

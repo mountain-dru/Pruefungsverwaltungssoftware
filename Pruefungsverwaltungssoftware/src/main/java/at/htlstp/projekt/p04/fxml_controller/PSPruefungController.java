@@ -23,6 +23,7 @@ import java.time.ZoneId;
 import java.util.Date;
 import java.util.Objects;
 import java.util.ResourceBundle;
+import java.util.regex.Pattern;
 import javafx.collections.FXCollections;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
@@ -66,7 +67,7 @@ public class PSPruefungController implements Initializable {
     private PraPruefung pruefung;
 
     private final Tooltip tip_name
-            = new Tooltip("Eine Prüfung benötigt einen Namen!");
+            = new Tooltip("Der Name einer Prüfung darf nicht leer sein. Es sind nur Buchstaben, Zahlen und die zwei Sonderzeichen \".\" and \"-\" zugelassen.");
     private final Tooltip tip_date = new Tooltip("Das Prüfungsdatum darf nicht in der Vergangenheit\n"
             + " liegen, leer oder an einem Samstag/Sonntag sein!");
 
@@ -87,7 +88,8 @@ public class PSPruefungController implements Initializable {
             chbox_pr_ue.setItems(FXCollections.observableArrayList(Verwaltungssoftware.Unterrichtseinheit.values()));
 
             chbox_pr_klasse.valueProperty().addListener((l, oldV, newV) -> {
-                chbox_pr_gegenstand.setItems(FXCollections.observableArrayList(instace.getGegenstaendeInKlasseByLehrer(menuController.getLehrer(), newV)).sorted());
+                chbox_pr_gegenstand.setItems(FXCollections.observableArrayList(
+                        instace.getGegenstaendeInKlasseByLehrer(menuController.getLehrer(), newV)).sorted());
                 chbox_pr_gegenstand.getSelectionModel().selectFirst();
             });
 
@@ -95,7 +97,7 @@ public class PSPruefungController implements Initializable {
             myStage.setOnCloseRequest(e -> onActionClose(e));
 
             fld_pr_name.textProperty().addListener((e, oldV, newV) -> {
-                if (newV == null || newV.isEmpty()) {
+                if (!isNameValid(newV)) {
                     Tooltip.install(fld_pr_name, tip_name);
                     fld_pr_name.setStyle("-fx-border-width: 2px;"
                             + "-fx-border-color: red");
@@ -165,9 +167,6 @@ public class PSPruefungController implements Initializable {
             try {
                 Verwaltungssoftware.createDirectoryForPruefung(pruefung);
                 Path skripts = Verwaltungssoftware.SKRIPTS_PATH;
-                Path skript_dest = Verwaltungssoftware.getDirectoryFromPruefung(pruefung).resolve("Skripts");
-                System.out.println("skripts: " + skripts.toString());
-                System.out.println("skript_dest: " + skript_dest.toString());
                 Files.list(skripts)
                         .forEach(file -> copySkript(skripts.resolve(file).toAbsolutePath(), pruefung));
 
@@ -179,31 +178,40 @@ public class PSPruefungController implements Initializable {
             //Prüfung existiert bereits
             Path pruefungsPath = Verwaltungssoftware.getDirectoryFromPruefung(pruefung);
             String oldname = pruefung.getName();
-            String oldKlasse = pruefung.getKlasse().toString();
+            Klasse oldKlasse = pruefung.getKlasse();
 
-            pruefung.setName(fld_pr_name.getText());
+            if (!oldKlasse.toString().equals(chbox_pr_klasse.getValue().toString()) || !oldname.equals(fld_pr_name.getText())) {
+                try {
+                    pruefung.setName(fld_pr_name.getText());
+                    pruefung.setKlasse(chbox_pr_klasse.getValue());
+                    Path newDirectory = Verwaltungssoftware.getDirectoryFromPruefung(pruefung);
+                    //Erstellt den Pfad zum entsprechenden Verzeichnis 
+                    Files.move(pruefungsPath, newDirectory);    //Umbennen
+                } catch (IOException ex) {
+                    //User-freundliche Fehlermeldung
+                    Utilities.showMessageWithFixedWidth("Fehler",
+                            "Ein Fehler ist beim Umändern des Verzeichnisnamens aufgetreten",
+                            "Vergewissern Sie sich, dass keine Dateien oder Verzeichnisse aus dem jeweiligen "
+                            + " Prüfungsordner geöffnet sind und versuchen Sie es erneut.",
+                            Alert.AlertType.ERROR,
+                            Verwaltungssoftware.schooltoolsLogo(),
+                            Verwaltungssoftware.INFORMATION_MESSAGE_WIDTH,
+                            false);
+                    pruefung.setName(oldname);
+                    pruefung.setKlasse(oldKlasse);
+                    return;
+                }
+            }
             pruefung.setUnterrichtsstunde(chbox_pr_ue.getValue());
             pruefung.setDatum(fromLocal);
             pruefung.setGegenstand(chbox_pr_gegenstand.getValue());
-            pruefung.setKlasse(chbox_pr_klasse.getValue());
             Hibernate_DAO.getDaoInstance().updatePraktischePruefung(pruefung);
             menuController.getTbl_pruefungen().refresh();
-
-            if (!oldKlasse.equals(pruefung.getKlasse().toString())
-                    || !oldname.equals(pruefung.getName())) {
-                try {
-                    Path newDirectory = Verwaltungssoftware.getDirectoryFromPruefung(pruefung);
-                    Files.move(pruefungsPath, newDirectory);
-                } catch (IOException ex) {
-                    Utilities.showMessageForExceptions(ex, Verwaltungssoftware.schooltoolsLogo(), false);
-                }
-            }
 
         }
 
         //Wichtig
         menuController.getTbl_pruefungen().getSelectionModel().select(pruefung);
-
         Stage myStage = (Stage) lbl_pr_lehrername.getScene().getWindow();
         myStage.setOnCloseRequest(null);
         myStage.fireEvent(new WindowEvent(myStage, WindowEvent.WINDOW_CLOSE_REQUEST));   //Stage schließen 
@@ -303,5 +311,11 @@ public class PSPruefungController implements Initializable {
         } catch (IOException ex) {
             Utilities.showMessageForExceptions(ex, Verwaltungssoftware.schooltoolsLogo(), true);
         }
+    }
+
+    private static boolean isNameValid(String newV) {
+        return (newV != null
+                && !newV.isEmpty()
+                && newV.matches("[A-Za-zäöüÄÖÜ\\d\\-\\.\\s]*"));
     }
 }

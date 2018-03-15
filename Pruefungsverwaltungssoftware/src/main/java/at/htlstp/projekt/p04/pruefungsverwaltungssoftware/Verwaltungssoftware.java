@@ -25,6 +25,7 @@ import java.util.Properties;
 import javafx.application.Application;
 import static javafx.application.Application.launch;
 import javafx.scene.Scene;
+import javafx.scene.control.Alert;
 import javafx.scene.control.DateCell;
 import javafx.scene.control.DatePicker;
 import javafx.scene.image.Image;
@@ -72,28 +73,42 @@ public class Verwaltungssoftware extends Application {
         return new Image(vsObject.getClass().getResource(LOGO_URL).toString());
     }
 
-    public static void deleteDirectory(File directory) {
+    public static boolean deleteDirectory(File directory) {
 
-        if (directory.exists()) {
-            File[] files = directory.listFiles();
-            if (files.length > 0) {
-                for (int i = 0; i < files.length; i++) {
-                    if (files[i].isDirectory()) {
-                        deleteDirectory(files[i]);
-                    } else {
-                        files[i].delete();
+        try {
+            if (directory.exists()) {
+                File[] files = directory.listFiles();
+                if (files.length > 0) {
+                    for (int i = 0; i < files.length; i++) {
+                        if (files[i].isDirectory()) {
+                            deleteDirectory(files[i]);
+                        } else {
+                            Files.delete(files[i].toPath());
+                        }
                     }
                 }
+                Files.delete(directory.toPath());
             }
-            System.out.println(directory.delete());
+        } catch (IOException io) {
+            Utilities.showMessageWithFixedWidth("Fehler",
+                    "Ein Fehler ist beim Löschen des Prüfungsverzeichnisses aufgetreten",
+                    "Vergewissern Sie sich, dass keine Dateien oder Verzeichnisse aus dem jeweiligen "
+                    + " Prüfungsordner geöffnet sind und versuchen Sie es erneut.",
+                    Alert.AlertType.ERROR,
+                    Verwaltungssoftware.schooltoolsLogo(),
+                    Verwaltungssoftware.INFORMATION_MESSAGE_WIDTH,
+                    false);
+            return false; 
 
         }
+        return true; 
 
     }
 
     @Override
     public void start(Stage stage) {
         //Login 
+        //Lehrer_Generator.main(null);
         Login login = new Login(LDAPAuthentification::isValidUser);
         login.showLogin();
         //Wird vom Controller beim gültigen Login geändert.

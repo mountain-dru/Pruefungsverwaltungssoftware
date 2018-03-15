@@ -358,7 +358,7 @@ public class Schueler implements java.io.Serializable, Comparable<Schueler> {
 
     public String userString() {
         if (ssdZuname != null && ssdVorname != null) {
-            return String.format("%s%02d%s", getKlasse().getKlaBez().toLowerCase(), getSsdKatnr(), getSsdZuname().toLowerCase());
+            return String.format("%s%02d%s", getKlasse().getKlaBez().toLowerCase(), getSsdKatnr(), getSsdZuname().toLowerCase().substring(0, 3));
         } else {
             return "";
         }

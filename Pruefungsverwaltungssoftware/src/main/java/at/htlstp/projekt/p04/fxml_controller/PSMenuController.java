@@ -21,7 +21,6 @@ import client.ConnectionParameter;
 import java.awt.Desktop;
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
-import java.io.FileReader;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
@@ -31,16 +30,20 @@ import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
 import java.util.ResourceBundle;
+import java.util.Set;
+import java.util.TreeSet;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.stream.Collectors;
 import javafx.beans.binding.Bindings;
 import javafx.beans.binding.BooleanBinding;
 import javafx.beans.property.SimpleObjectProperty;
@@ -59,6 +62,7 @@ import javafx.scene.control.ProgressIndicator;
 import javafx.scene.control.TableColumn;
 import javafx.scene.control.TableView;
 import javafx.stage.Stage;
+import org.apache.commons.io.FileUtils;
 
 /**
  * FXML Controller class
@@ -350,6 +354,30 @@ public class PSMenuController implements Initializable {
 
     @FXML
     private void onActionVerzeichnisseKopieren(ActionEvent event) {
+        PraPruefung aktPruefung = tbl_pruefungen.getSelectionModel().getSelectedItem();
+        
+        LocalDateTime aktTime = LocalDateTime.now();
+        String name = "Abgaben_" + aktTime.format(DateTimeFormatter.ofPattern("hh-mm-ss"));
+        Path abgaben = Verwaltungssoftware.getDirectoryFromPruefung(aktPruefung).resolve("Abgaben");
+        Path newAbgaben = abgaben.resolve(name);
+        Path schuelerPath = Verwaltungssoftware.SCHUELER_PATH;
+        try {
+            Files.createDirectory(newAbgaben);
+            Set<Schueler> schuelerSet = new TreeSet<>(Hibernate_DAO.getDaoInstance().getSchuelerFromPruefung(aktPruefung));
+            for (Schueler sch : schuelerSet) {
+                String username = sch.userString();
+                Path userDirectory = schuelerPath.resolve(username);
+            
+                FileUtils.copyDirectory(userDirectory.toFile(), newAbgaben.resolve(sch.getKlasse().getKlaBez()
+                        + "_" + String.format("%02d", sch.getSsdKatnr())
+                        + "_" + sch.getSsdZuname()
+                        + "_" + sch.getSsdVorname()).toFile(), file -> !(file.isDirectory() && "Angaben".equals(file.getName()))  );
+
+            }
+        } catch (IOException io) {
+            Utilities.showMessageForExceptions(io, Verwaltungssoftware.schooltoolsLogo(), false);
+        }
+
     }
 
     @FXML
@@ -370,7 +398,6 @@ public class PSMenuController implements Initializable {
 
         });
         lbl_User.setText("Usererstellung: ");
-        ;
 
         task.progressProperty().addListener((on, oldV, newV) -> {
             if ((double) newV == 1L) {
@@ -380,11 +407,11 @@ public class PSMenuController implements Initializable {
                         protected Void call() throws Exception {
                             this.updateProgress(0.5, 1.0);
                             Path userFile = Verwaltungssoftware.getDirectoryFromPruefung(aktPruefung).resolve(Paths.get("Skripts/activeusers.txt"));
-
+                            System.out.println(userFile.toFile().exists());
                             try (Socket sock = new Socket(InetAddress.getByName("10.138.138.138"), 42000);
                                     ObjectInputStream socketIn = new ObjectInputStream(sock.getInputStream());
                                     ObjectOutputStream socketOut = new ObjectOutputStream(sock.getOutputStream());
-                                    BufferedReader bf = new BufferedReader(new FileReader(userFile.toFile()))) {
+                                    BufferedReader bf = Files.newBufferedReader(userFile)) {
 
                                 socketOut.writeObject(ConnectionParameter.UNLOCK_INTERNET);
                                 Map<String, String> userMap = new HashMap<>();
@@ -392,18 +419,15 @@ public class PSMenuController implements Initializable {
                                 while ((line = bf.readLine()) != null) {
                                     userMap.put(line.split(";")[0], line.split(";")[1]);
                                 }
-
                                 socketOut.writeObject(userMap);
-                                socketOut.writeObject(new ArrayList(Arrays.asList("docs.oracle.com", "www.primefaces.org")));
+                                socketOut.writeObject(getWebsitesFromPruefung(aktPruefung));
                                 socketOut.writeObject(aktPruefung.getName());
                                 ConnectionParameter response = (ConnectionParameter) socketIn.readObject();
 
                                 if (response.equals(ConnectionParameter.SUCCEDDED)) {
                                     this.updateProgress(1.0, 1.0);
-
                                 } else {
                                     this.updateProgress(0.9, 1.0);
-
                                 }
                             } catch (IOException io) {
                                 Utilities.showMessageForExceptions(io, Verwaltungssoftware.schooltoolsLogo(), false);
@@ -413,56 +437,68 @@ public class PSMenuController implements Initializable {
                         }
                     };
                     Thread proxy = new Thread(internet);
-                    internet.progressProperty().addListener((o, oldVa, newVa) -> {
-                        double value = (double) newVa;
-                        if (value == 1.0) {
-                            Utilities.showMessageWithFixedWidth("Information",
-                                    "Initialisierung abgeschlossen",
-                                    "Interzugriff wurde vollständig eingerichtet",
-                                    Alert.AlertType.INFORMATION, Verwaltungssoftware.schooltoolsLogo(),
-                                    Verwaltungssoftware.INFORMATION_MESSAGE_WIDTH,
-                                    false);
-                            aktPruefung.setStatus(Verwaltungssoftware.PR_status.GESTARTET);
-                            tbl_pruefungen.disableProperty().set(false);
-                            tbl_pruefungen.getSelectionModel().select(null);
-                            tbl_pruefungen.getSelectionModel().select(aktPruefung);
-                            tbl_pruefungen.refresh();
-                        } else if (value == 0.5) {
-                            Utilities.showMessageWithFixedWidth("Information",
-                                    "Initialisierung des Internets",
-                                    "Der Vorgang wird etwa 30 Sekunden beanspruchen",
-                                    Alert.AlertType.INFORMATION, Verwaltungssoftware.schooltoolsLogo(),
-                                    Verwaltungssoftware.INFORMATION_MESSAGE_WIDTH,
-                                    false);
-                        } else if (value == 0.9) {
-                            Utilities.showMessageWithFixedWidth("Fehler",
-                                    "Initialisierung abgebrochen",
-                                    "Der Internetzugriff konnte nicht eingerichtet werden",
-                                    Alert.AlertType.ERROR, Verwaltungssoftware.schooltoolsLogo(),
-                                    Verwaltungssoftware.INFORMATION_MESSAGE_WIDTH,
-                                    false);
-                        }
-                    });
+
+                    internet.progressProperty()
+                            .addListener((o, oldVa, newVa) -> {
+                                double value = (double) newVa;
+                                if (value == 1.0) {
+                                    Utilities.showMessageWithFixedWidth("Information",
+                                            "Initialisierung abgeschlossen",
+                                            "Interzugriff wurde vollständig eingerichtet",
+                                            Alert.AlertType.INFORMATION, Verwaltungssoftware.schooltoolsLogo(),
+                                            Verwaltungssoftware.INFORMATION_MESSAGE_WIDTH,
+                                            false);
+                                    start(aktPruefung);
+
+                                } else if (value == 0.5) {
+                                    Utilities.showMessageWithFixedWidth("Information",
+                                            "Initialisierung des Internets",
+                                            "Der Vorgang wird etwa 30 Sekunden beanspruchen",
+                                            Alert.AlertType.INFORMATION, Verwaltungssoftware.schooltoolsLogo(),
+                                            Verwaltungssoftware.INFORMATION_MESSAGE_WIDTH,
+                                            false);
+                                } else if (value == 0.9) {
+                                    Utilities.showMessageWithFixedWidth("Fehler",
+                                            "Initialisierung abgebrochen",
+                                            "Der Internetzugriff konnte nicht eingerichtet werden",
+                                            Alert.AlertType.ERROR, Verwaltungssoftware.schooltoolsLogo(),
+                                            Verwaltungssoftware.INFORMATION_MESSAGE_WIDTH,
+                                            false);
+                                }
+                            }
+                            );
                     proxy.start();
 
                 } else {
-                    aktPruefung.setStatus(Verwaltungssoftware.PR_status.GESTARTET);
-                    tbl_pruefungen.disableProperty().set(false);
-                    tbl_pruefungen.getSelectionModel().select(null);
-                    tbl_pruefungen.getSelectionModel().select(aktPruefung);
-                    tbl_pruefungen.refresh();
-
+                    start(aktPruefung);
                 }
             }
         });
         t.start();
 
-        Hibernate_DAO.getDaoInstance().updatePraktischePruefung(aktPruefung);
+    }
 
+    private void start(PraPruefung aktPruefung) {
+        aktPruefung.setStatus(Verwaltungssoftware.PR_status.GESTARTET);
+        tbl_pruefungen.disableProperty().set(false);
+        tbl_pruefungen.getSelectionModel().select(null);
+        tbl_pruefungen.getSelectionModel().select(aktPruefung);
+        tbl_pruefungen.refresh();
+        Hibernate_DAO.getDaoInstance().updatePraktischePruefung(aktPruefung);
+    }
+
+    private void end(PraPruefung aktPruefung) {
+        aktPruefung.setStatus(Verwaltungssoftware.PR_status.BEENDET);
+        tbl_pruefungen.disableProperty().set(false);
+        tbl_pruefungen.getSelectionModel().select(null);
+        tbl_pruefungen.getSelectionModel().select(aktPruefung);
+        tbl_pruefungen.refresh();
+        Hibernate_DAO.getDaoInstance().updatePraktischePruefung(aktPruefung);
     }
 
     @FXML
     private void onActionPruefungBeenden(ActionEvent event) {
+        onActionVerzeichnisseKopieren(null);
         PraPruefung aktPruefung = tbl_pruefungen.getSelectionModel().getSelectedItem();
         if (!checkIfSelected("Meldung", "Sie müssen eine Zeile in der Tabelle  selektieren, um eine Prüfung zu beenden")) {
             return;
@@ -501,33 +537,94 @@ public class PSMenuController implements Initializable {
 
                                 socketOut.writeObject(schueler);
                                 socketOut.writeObject(aktPruefung.getName());
-                                System.out.println("Wait for response");
-                                System.out.println(socketIn.readObject());
+                                Object response = socketIn.readObject();
+                                if (response instanceof Map) {
+                                    createLogs((Map<String, Set<String>>) response, aktPruefung);
+                                    this.updateProgress(1.0, 1.0);
+                                } else if (response instanceof ConnectionParameter) {
+                                    this.updateProgress(0.9, 1.0);
+                                }
+
                             } catch (IOException io) {
                                 Utilities.showMessageForExceptions(io, Verwaltungssoftware.schooltoolsLogo(), false);
                             }
-                            this.updateProgress(1.0, 1.0);
+
                             return null;
                         }
+
+                        private void createLogs(Map<String, Set<String>> map, PraPruefung akt) {
+                            try (BufferedWriter bw = Files.newBufferedWriter(Paths.get(
+                                    Verwaltungssoftware.getDirectoryFromPruefung(akt).toAbsolutePath().toString(), "Internetzugriffsprotokoll.txt"))) {
+                                map.forEach((user, set) -> {
+                                    if (!set.isEmpty()) {
+                                        try {
+                                            Set<String> websites = new HashSet<>(getWebsitesFromPruefung(akt));
+                                            Schueler schueler = akt.getSchuelerSet()
+                                                    .stream()
+                                                    .filter(sch -> sch.getSsdKatnr() == Integer.parseInt(user.substring(5, 7)))
+                                                    .findFirst()
+                                                    .get();
+
+                                            bw.write(user + "(" + schueler.getSsdVorname() + " " + schueler.getSsdZuname() + ")");
+                                            bw.newLine();
+                                            bw.newLine();
+
+                                            Map<Boolean, List<String>> accepted = set.stream().collect(Collectors.partitioningBy(str -> {
+                                                for (String website : websites) {
+                                                    if (str.contains(website)) {        //Es handelt sich um den Logeintrag einer zugelassenen Website
+                                                        return true;
+                                                    }
+                                                }
+                                                return false;
+                                            }));
+                                            bw.write("Folgende zugelassenen Websites wurden augerufen: ");
+                                            bw.newLine();
+                                            for (String url : accepted.get(true)) {
+                                                String parts[] = url.split("TCP_STATUS: ");
+                                                bw.write(parts[0].trim());
+                                                bw.newLine();
+                                            }
+                                            bw.newLine();
+                                            bw.write("Folgende Websites wurden ebenfalls aufgerufen: ");
+                                            bw.newLine();
+                                            for (String url : accepted.get(false)) {
+                                                String parts[] = url.split("TCP_STATUS: ");
+                                                bw.write(parts[0].trim() + ". Zugriff erlaubt: " + ("TCP_DENIED".equals(parts[1]) ? "NEIN" : "JA"));
+                                                bw.newLine();
+                                            }
+                                            bw.write("---------------------------------------------------------------------------------");
+                                            bw.newLine();
+
+                                        } catch (IOException io) {
+                                            Utilities.showMessageForExceptions(io, Verwaltungssoftware.schooltoolsLogo(), false);
+                                        }
+                                    }
+                                });
+
+                            } catch (IOException io) {
+                                Utilities.showMessageForExceptions(io, Verwaltungssoftware.schooltoolsLogo(), false);
+                            }
+
+                        }
+
                     };
                     Thread proxy = new Thread(internet);
                     internet.progressProperty().addListener((o, oldVa, newVa) -> {
                         if ((double) newVa == 1.0) {
-                            aktPruefung.setStatus(Verwaltungssoftware.PR_status.BEENDET);
-                            tbl_pruefungen.disableProperty().set(false);
-                            tbl_pruefungen.getSelectionModel().select(null);
-                            tbl_pruefungen.getSelectionModel().select(aktPruefung);
-                            tbl_pruefungen.refresh();
+                            end(aktPruefung);
+                        } else if ((double) newVa == 0.9) {
+                            Utilities.showMessageWithFixedWidth("Fehler",
+                                    "Ein Fehler ist beim Beenden der Prüfung passiert",
+                                    "Die Internetkonfigurationen konnten nicht vollständig entfernt werden.",
+                                    Alert.AlertType.ERROR, Verwaltungssoftware.schooltoolsLogo(),
+                                    Verwaltungssoftware.INFORMATION_MESSAGE_WIDTH,
+                                    false);
                         }
                     });
                     proxy.start();
 
                 } else {
-                    aktPruefung.setStatus(Verwaltungssoftware.PR_status.BEENDET);
-                    tbl_pruefungen.disableProperty().set(false);
-                    tbl_pruefungen.getSelectionModel().select(null);
-                    tbl_pruefungen.getSelectionModel().select(aktPruefung);
-                    tbl_pruefungen.refresh();
+                    end(aktPruefung);
                 }
             }
         });
@@ -545,17 +642,20 @@ public class PSMenuController implements Initializable {
             return;
         }
 
-        ButtonType answer = Utilities.showYesNoDialog("Soll die Prüfung und die dazugehörigen Daten  wirklich endgültig gelöscht werden?",
+        ButtonType answer = Utilities.showYesNoDialog("Sollen die Prüfung und die dazugehörigen Daten wirklich endgültig gelöscht werden?",
                 "Meldung",
                 Alert.AlertType.INFORMATION,
                 Verwaltungssoftware.schooltoolsLogo(),
                 Verwaltungssoftware.INFORMATION_MESSAGE_WIDTH);
         if (answer.equals(ButtonType.YES)) {
-            Hibernate_DAO.getDaoInstance().deletePraktischePruefung(aktPruefung);
-            pruefungen.remove(aktPruefung);
-            tbl_pruefungen.refresh();
             Path toDelete = Verwaltungssoftware.getDirectoryFromPruefung(aktPruefung);
-            Verwaltungssoftware.deleteDirectory(toDelete.toFile());
+
+            if (Verwaltungssoftware.deleteDirectory(toDelete.toFile())) {
+                Hibernate_DAO.getDaoInstance().deletePraktischePruefung(aktPruefung);
+                pruefungen.remove(aktPruefung);
+                tbl_pruefungen.refresh();
+            }
+
         }
 
     }
@@ -606,7 +706,7 @@ public class PSMenuController implements Initializable {
             return;
         }
         Path userFile = Verwaltungssoftware.getDirectoryFromPruefung(aktPruefung).resolve(Paths.get("Skripts/activeusers.txt"));
-        Path userPruefer = Paths.get(Verwaltungssoftware.getDirectoryFromPruefung(aktPruefung).toAbsolutePath().toString(), "user.txt");
+        Path userPruefer = Paths.get(Verwaltungssoftware.getDirectoryFromPruefung(aktPruefung).toAbsolutePath().toString(), "users.txt");
 
         if (aktPruefung.getStatus().equals(Verwaltungssoftware.PR_status.GESTARTET)) {
             try {
@@ -619,8 +719,6 @@ public class PSMenuController implements Initializable {
 
         Runtime r = Runtime.getRuntime();
         Process p = null;
-//            p = r.exec("cmd /c Start \"\" /B del " + skripts + "\\activeusers.txt");
-//            p.waitFor();
         List<Schueler> schuelerList = Hibernate_DAO.getDaoInstance().getSchuelerFromPruefung(aktPruefung);
         schuelerList.sort((s1, s2) -> Integer.compare(s1.getSsdKatnr(), s2.getSsdKatnr()));
         int longestName = schuelerList.stream().mapToInt(sch -> sch.getSsdZuname().length()).max().getAsInt();
@@ -652,7 +750,6 @@ public class PSMenuController implements Initializable {
                 for (int i = 0; i < 8; i++) {
                     passwd += (char) (97 + (rd.nextInt(26)));
                 }
-
                 bw_user.write(user.length() > maxUsernameLength ? user.substring(0, maxUsernameLength) : user);
                 bw_user.write(";" + passwd);
                 bw_user.newLine();
@@ -695,6 +792,21 @@ public class PSMenuController implements Initializable {
         } catch (IOException ex) {
             Utilities.showMessageForExceptions(ex, null, false);
         }
+    }
+
+    private List<String> getWebsitesFromPruefung(PraPruefung aktPruefung) {
+        Path websitesFile = Verwaltungssoftware.getDirectoryFromPruefung(aktPruefung).resolve("websites.txt");
+        List<String> websites = new ArrayList<>();
+        try {
+            Path move = Paths.get(Verwaltungssoftware.getDirectoryFromPruefung(aktPruefung).toAbsolutePath().toString(), "Skripts", "websites.txt");
+            Files.move(websitesFile, move);
+            websites = Files.lines(move)
+                    .map(str -> str.split("\\s")[0])
+                    .collect(Collectors.toList());
+        } catch (IOException io) {
+            System.out.println(io);
+        }
+        return websites;
     }
 
 }
